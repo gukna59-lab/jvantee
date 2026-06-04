@@ -129,8 +129,10 @@ export function Room({ roomId, roomName, username, uid, avatar, onLeave, isPubli
       setRoomState(prev => prev ? { ...prev, isPlaying, timestamp, lastUpdateAt: updatedAt } : null);
     });
 
-    socket.on('video_url_updated', (videoUrl: string) => {
-      setRoomState(prev => prev ? { ...prev, videoUrl, timestamp: 0, isPlaying: false, lastUpdateAt: Date.now() } : null);
+    socket.on('video_url_updated', (data: { url: string, title?: string } | string) => {
+      const url = typeof data === 'string' ? data : data.url;
+      const title = typeof data === 'string' ? undefined : data.title;
+      setRoomState(prev => prev ? { ...prev, videoUrl: url, videoTitle: title || prev.videoTitle, timestamp: 0, isPlaying: false, lastUpdateAt: Date.now() } : null);
     });
 
     socket.on('admin_changed', (newAdminId: string) => {

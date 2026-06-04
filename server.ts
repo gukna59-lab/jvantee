@@ -181,10 +181,10 @@ async function startServer() {
       io.to(roomId).emit('chat_message', joinMessage);
     });
 
-    socket.on('update_video_url', ({ url, title }) => {
+    socket.on('update_video_url', (payload) => {
       // Handle both old client (string) and new client (object)
-      const videoUrl = typeof url === 'string' ? url : arguments[0];
-      const videoTitle = typeof title === 'string' ? title : null;
+      const videoUrl = typeof payload === 'string' ? payload : payload.url;
+      const videoTitle = typeof payload === 'string' ? null : payload.title;
 
       if (!currentRoomId || !rooms[currentRoomId]) return;
       if (!canControlPlayback(rooms[currentRoomId], socket.id, currentUser?.uid)) return;
