@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { PlaySquare, Users, Video, LogOut, Settings, Upload, X, Search, Key, Plus, Lock, Globe, UserPlus, Check, XCircle } from 'lucide-react';
+import { PlaySquare, Users, Video, LogOut, Settings, Upload, X, Search, Key, Plus, Lock, Globe, UserPlus, Check, XCircle, MonitorPlay, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { auth, db } from '../firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User as FirebaseUser, sendEmailVerification, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseUser } from 'firebase/auth';
 import { doc, setDoc, getDocs, collection, query, where, updateDoc, arrayUnion, onSnapshot, deleteDoc, getDoc } from 'firebase/firestore';
 import logoSrc from '../assets/images/jvante_logo_1780506650738.png';
 
 interface LobbyProps {
   onJoin: (username: string, roomId: string, avatar?: string, isPublic?: boolean, roomName?: string) => void;
+  onWatchAnime?: () => void;
   user: FirebaseUser | null;
   defaultUsername: string | null;
   defaultAvatar: string | null;
@@ -48,17 +49,17 @@ const fileToAvatarDataUrl = (file: File): Promise<string> => {
   });
 };
 
-export function Lobby({ onJoin, user, defaultUsername, defaultAvatar }: LobbyProps) {
+export function Lobby({ onJoin, onWatchAnime, user, defaultUsername, defaultAvatar }: LobbyProps) {
   const [username, setUsername] = useState(defaultUsername || '');
   const [avatar, setAvatar] = useState(defaultAvatar || '');
   
-  const [email, setEmail] = useState('');
+  const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
   const [authError, setAuthError] = useState('');
   
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [activeModal, setActiveModal] = useState<'create' | 'join' | 'friends' | null>(null);
+  const [activeModal, setActiveModal] = useState<'create' | 'join' | 'friends' | 'watchAlone' | null>(null);
   
   const [joinRoomId, setJoinRoomId] = useState('');
   
@@ -72,6 +73,9 @@ export function Lobby({ onJoin, user, defaultUsername, defaultAvatar }: LobbyPro
   const [newRoomName, setNewRoomName] = useState('');
   const [onlineUsersMap, setOnlineUsersMap] = useState<string[]>([]);
   const [activeRooms, setActiveRooms] = useState<any[]>([]);
+
+  const normalizeLogin = (value: string) => value.trim().toLowerCase();
+  const loginToAuthEmail = (value: string) => `${normalizeLogin(value)}@jvante.local`;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -240,19 +244,30 @@ export function Lobby({ onJoin, user, defaultUsername, defaultAvatar }: LobbyPro
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
+    const normalizedLogin = normalizeLogin(login);
+    if (!/^[a-z0-9_.-]{3,24}$/.test(normalizedLogin)) {
+      setAuthError('Login must be 3-24 chars: latin letters, numbers, . _ -');
+      return;
+    }
     try {
       if (isRegistering) {
-        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        const existing = await getDocs(query(collection(db, 'users'), where('login', '==', normalizedLogin)));
+        if (!existing.empty) {
+          setAuthError('This login is already taken');
+          return;
+        }
+        const userCred = await createUserWithEmailAndPassword(auth, loginToAuthEmail(normalizedLogin), password);
         await setDoc(doc(db, 'users', userCred.user.uid), {
-          username: email.split('@')[0],
+          username: normalizedLogin,
+          login: normalizedLogin,
+          authEmail: loginToAuthEmail(normalizedLogin),
           avatar: '',
           friends: [],
           createdAt: Date.now()
         });
-        await sendEmailVerification(userCred.user);
         alert('Письмо отправлено на почту.');
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, loginToAuthEmail(normalizedLogin), password);
       }
     } catch (err: any) {
       setAuthError(err.message || 'Ошибка аутентификации');
@@ -304,12 +319,12 @@ export function Lobby({ onJoin, user, defaultUsername, defaultAvatar }: LobbyPro
           <form onSubmit={handleAuth} className="space-y-4">
             {authError && <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-xl text-sm">{authError}</div>}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-zinc-300 ml-1">Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="w-full bg-[#0A0C10] border border-[#1F2937] rounded-xl px-4 py-3 text-zinc-100 placeholder-zinc-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" />
+              <label className="text-sm font-medium text-zinc-300 ml-1">Логин</label>
+              <input type="text" value={login} onChange={(e) => setLogin(e.target.value)} required autoComplete="username" className="w-full bg-[#0A0C10] border border-[#1F2937] rounded-xl px-4 py-3 text-zinc-100 placeholder-zinc-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium text-zinc-300 ml-1">Пароль</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="w-full bg-[#0A0C10] border border-[#1F2937] rounded-xl px-4 py-3 text-zinc-100 placeholder-zinc-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete={isRegistering ? 'new-password' : 'current-password'} className="w-full bg-[#0A0C10] border border-[#1F2937] rounded-xl px-4 py-3 text-zinc-100 placeholder-zinc-600 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all outline-none" />
             </div>
             <button type="submit" className="w-full bg-[#3B82F6] hover:bg-blue-600 text-white font-semibold rounded-xl px-4 py-3 transition-all mt-4">{isRegistering ? 'Зарегистрироваться' : 'Войти'}</button>
             <div className="text-center mt-4">
@@ -460,6 +475,9 @@ export function Lobby({ onJoin, user, defaultUsername, defaultAvatar }: LobbyPro
                 <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#11141A]"></span>
              )}
           </button>
+          <button onClick={() => setActiveModal('watchAlone')} className="p-3 bg-transparent hover:bg-[#1E293B] rounded-xl text-zinc-400 hover:text-white transition-all relative group" title="Смотреть одному">
+             <MonitorPlay className="w-6 h-6 group-hover:scale-110 transition-transform" />
+          </button>
           <button onClick={() => setActiveModal('join')} className="p-3 bg-transparent hover:bg-[#1E293B] rounded-xl text-zinc-400 hover:text-white transition-all group" title="Войти по коду">
              <Key className="w-6 h-6 group-hover:scale-110 transition-transform" />
           </button>
@@ -581,6 +599,29 @@ export function Lobby({ onJoin, user, defaultUsername, defaultAvatar }: LobbyPro
                          </button>
                       </div>
                     )}
+                  </div>
+                </div>
+              )}
+              {activeModal === 'watchAlone' && (
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-2xl mx-auto flex items-center justify-center mb-4"><MonitorPlay className="w-6 h-6" /></div>
+                    <h2 className="text-xl font-bold">Смотреть одному</h2>
+                    <p className="text-xs text-zinc-500 mt-1">Что вы хотите посмотреть?</p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                     <button onClick={() => { setActiveModal(null); onWatchAnime?.(); }} className="p-4 bg-[#0A0C10] hover:bg-[#1E293B] border border-[#1F2937] hover:border-purple-500/50 rounded-2xl transition-all font-medium flex items-center justify-between group">
+                        <span>Аниме</span>
+                        <ChevronRight className="w-5 h-5 text-zinc-600 group-hover:text-purple-400 transition-colors" />
+                     </button>
+                     <button className="p-4 bg-[#0A0C10] hover:bg-[#1E293B] border border-[#1F2937] hover:border-blue-500/50 rounded-2xl transition-all font-medium flex items-center justify-between group opacity-50 cursor-not-allowed" disabled>
+                        <span>Фильмы (скоро)</span>
+                        <ChevronRight className="w-5 h-5 text-zinc-600" />
+                     </button>
+                     <button className="p-4 bg-[#0A0C10] hover:bg-[#1E293B] border border-[#1F2937] hover:border-emerald-500/50 rounded-2xl transition-all font-medium flex items-center justify-between group opacity-50 cursor-not-allowed" disabled>
+                        <span>Сериалы (скоро)</span>
+                        <ChevronRight className="w-5 h-5 text-zinc-600" />
+                     </button>
                   </div>
                 </div>
               )}

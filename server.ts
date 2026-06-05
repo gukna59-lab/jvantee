@@ -8,7 +8,10 @@ async function startServer() {
   const app = express();
   const server = http.createServer(app);
   const io = new Server(server, {
-    cors: { origin: '*' }
+    cors: { origin: '*' },
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    transports: ['websocket', 'polling']
   });
 
   const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -79,6 +82,26 @@ async function startServer() {
     return room.creatorId === socketId || (!!room.creatorUid && room.creatorUid === uid);
   };
 
+  const getUserFingerprint = (user: Pick<User, 'uid' | 'username'>) => user.uid || user.username.toLowerCase();
+
+  const getFirstActiveJoiner = (room: Room) => {
+    for (const joiner of room.joinOrder) {
+      if (room.users[joiner.socketId]) return joiner;
+    }
+    const firstSocketId = Object.keys(room.users)[0];
+    return firstSocketId ? { fingerprint: getUserFingerprint(room.users[firstSocketId]), socketId: firstSocketId } : null;
+  };
+
+  const restoreRoomOwnerByJoinOrder = (room: Room) => {
+    const firstActiveJoiner = getFirstActiveJoiner(room);
+    if (!firstActiveJoiner) return;
+
+    const owner = room.users[firstActiveJoiner.socketId];
+    room.creatorId = firstActiveJoiner.socketId;
+    room.creatorUid = owner.uid;
+    room.adminId = firstActiveJoiner.socketId;
+  };
+
   const colors = [
     '#ef4444', '#f97316', '#f59e0b', '#84cc16', '#22c55e', 
     '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9', '#3b82f6', 
@@ -132,7 +155,7 @@ async function startServer() {
         currentTimestamp: 0
       };
       
-      const fingerprint = currentUser.uid || currentUser.username;
+      const fingerprint = getUserFingerprint(currentUser);
       const existingOrder = rooms[roomId].joinOrder.find(j => j.fingerprint === fingerprint);
       if (!existingOrder) {
          rooms[roomId].joinOrder.push({ fingerprint, socketId: socket.id });
@@ -140,23 +163,11 @@ async function startServer() {
          existingOrder.socketId = socket.id;
       }
 
-      // If room is empty but still exists (e.g. all left but not GC'd), make the first joiner admin
+      // If room is empty but still exists (e.g. all left but not GC'd), make the first joiner creator/admin.
       if (Object.keys(rooms[roomId].users).length === 0) {
         rooms[roomId].creatorId = socket.id;
         rooms[roomId].creatorUid = uid || undefined;
         rooms[roomId].adminId = socket.id;
-      } else {
-         // Auto-restore admin rights based on joinOrder:
-         // If this newly joined user has a LOWER index (higher priority) than the CURRENT mapped admin in joinOrder,
-         // they automatically regain the admin role.
-         const currentAdminFingerprint = rooms[roomId].joinOrder.find(j => j.socketId === rooms[roomId].adminId)?.fingerprint;
-         const currentAdminIndex = currentAdminFingerprint ? rooms[roomId].joinOrder.findIndex(j => j.fingerprint === currentAdminFingerprint) : Infinity;
-         const myIndex = rooms[roomId].joinOrder.findIndex(j => j.fingerprint === fingerprint);
-         
-         if (myIndex < currentAdminIndex) {
-            rooms[roomId].adminId = socket.id;
-            io.to(roomId).emit('admin_changed', socket.id);
-         }
       }
 
       if (uid) {
@@ -165,10 +176,11 @@ async function startServer() {
 
       rooms[roomId].users[socket.id] = currentUser;
 
-      if (rooms[roomId].creatorUid && rooms[roomId].creatorUid === currentUser.uid && rooms[roomId].creatorId !== socket.id) {
-        rooms[roomId].creatorId = socket.id;
-        io.to(roomId).emit('creator_changed', socket.id);
-      }
+      const prevCreatorId = rooms[roomId].creatorId;
+      const prevAdminId = rooms[roomId].adminId;
+      restoreRoomOwnerByJoinOrder(rooms[roomId]);
+      if (prevCreatorId !== rooms[roomId].creatorId) io.to(roomId).emit('creator_changed', rooms[roomId].creatorId);
+      if (prevAdminId !== rooms[roomId].adminId) io.to(roomId).emit('admin_changed', rooms[roomId].adminId);
 
       // Send initial state to the user
       socket.emit('room_state', {
@@ -266,28 +278,6 @@ async function startServer() {
       
       rooms[currentRoomId].queue.splice(index, 1);
       io.to(currentRoomId).emit('queue_updated', rooms[currentRoomId].queue);
-    });
-
-    socket.on('play_next_queue', () => {
-      if (!currentRoomId || !rooms[currentRoomId]) return;
-      if (!canControlPlayback(rooms[currentRoomId], socket.id, currentUser?.uid)) return;
-      
-      if (rooms[currentRoomId].queue.length > 0) {
-        const next = rooms[currentRoomId].queue.shift();
-        rooms[currentRoomId].videoUrl = next!.url;
-        rooms[currentRoomId].videoTitle = next!.title;
-        rooms[currentRoomId].timestamp = 0;
-        rooms[currentRoomId].isPlaying = false;
-        rooms[currentRoomId].lastUpdateAt = Date.now();
-
-        io.to(currentRoomId).emit('video_url_updated', { url: next!.url, title: next!.title });
-        io.to(currentRoomId).emit('queue_updated', rooms[currentRoomId].queue);
-        io.to(currentRoomId).emit('sync_playback', {
-          isPlaying: false,
-          timestamp: 0,
-          updatedAt: Date.now()
-        });
-      }
     });
 
     socket.on('play_state_change', ({ isPlaying, timestamp }) => {
@@ -489,22 +479,14 @@ async function startServer() {
           if (remainingUsers.length === 0) {
             delete rooms[currentRoomId];
           } else if (rooms[currentRoomId].creatorId === socket.id || rooms[currentRoomId].adminId === socket.id) {
-            let nextAdmin = remainingUsers[0];
-            for (const joiner of rooms[currentRoomId].joinOrder) {
-               if (rooms[currentRoomId].users[joiner.socketId]) {
-                  nextAdmin = joiner.socketId;
-                  break;
-               }
+            const prevCreatorId = rooms[currentRoomId].creatorId;
+            const prevAdminId = rooms[currentRoomId].adminId;
+            restoreRoomOwnerByJoinOrder(rooms[currentRoomId]);
+            if (prevCreatorId !== rooms[currentRoomId].creatorId) {
+               io.to(currentRoomId).emit('creator_changed', rooms[currentRoomId].creatorId);
             }
-
-            if (rooms[currentRoomId].creatorId === socket.id) {
-               rooms[currentRoomId].creatorId = nextAdmin;
-               rooms[currentRoomId].creatorUid = rooms[currentRoomId].users[nextAdmin].uid;
-               io.to(currentRoomId).emit('creator_changed', nextAdmin);
-            }
-            if (rooms[currentRoomId].adminId === socket.id) {
-               rooms[currentRoomId].adminId = nextAdmin;
-               io.to(currentRoomId).emit('admin_changed', nextAdmin);
+            if (prevAdminId !== rooms[currentRoomId].adminId) {
+               io.to(currentRoomId).emit('admin_changed', rooms[currentRoomId].adminId);
             }
           }
         }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Lobby } from './components/Lobby';
 import { Room } from './components/Room';
+import { AnimeHome } from './components/AnimeHome';
 import { auth, db } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, collection, query, where, onSnapshot, deleteDoc } from 'firebase/firestore';
@@ -17,6 +18,7 @@ export default function App() {
 
   const [isPublicRoom, setIsPublicRoom] = useState(true);
   const [invites, setInvites] = useState<any[]>([]);
+  const [view, setView] = useState<'lobby' | 'room' | 'anime'>('lobby');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -29,7 +31,7 @@ export default function App() {
            setUsername(docSnap.data().username);
            setAvatar(docSnap.data().avatar || null);
         } else {
-           setUsername(user.email?.split('@')[0] || 'User');
+           setUsername(user.email?.replace('@jvante.local', '').split('@')[0] || 'User');
         }
       } else {
         setUid(null);
@@ -78,12 +80,14 @@ export default function App() {
     setRoomId(joinedRoomId);
     setIsPublicRoom(isPublic);
     setRoomName(joinedRoomName || null);
+    setView('room');
   };
 
 
   const handleLeave = () => {
     setRoomId(null);
     setRoomName(null);
+    setView('lobby');
     const url = new URL(window.location.href);
     url.searchParams.delete('room');
     url.searchParams.delete('isPublic');
@@ -97,7 +101,7 @@ export default function App() {
   return (
     <>
       <AnimatePresence>
-         {invites.map(invite => (
+         {view === 'lobby' && invites.map(invite => (
             <motion.div
                key={invite.id}
                initial={{ opacity: 0, scale: 0.9, y: -20 }}
@@ -122,12 +126,13 @@ export default function App() {
             </motion.div>
          ))}
       </AnimatePresence>
-      {roomId && username ? (
+      {view === 'room' && roomId && username ? (
         <Room roomId={roomId} roomName={roomName || undefined} username={username} uid={uid || undefined} avatar={avatar || undefined} onLeave={handleLeave} isPublic={isPublicRoom} />
+      ) : view === 'anime' ? (
+        <AnimeHome onBack={() => setView('lobby')} user={currentUser} username={username} avatar={avatar} />
       ) : (
-        <Lobby onJoin={handleJoin} user={currentUser} defaultUsername={username} defaultAvatar={avatar} />
+        <Lobby onJoin={handleJoin} onWatchAnime={() => setView('anime')} user={currentUser} defaultUsername={username} defaultAvatar={avatar} />
       )}
     </>
   );
 }
-

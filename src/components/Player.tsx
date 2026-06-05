@@ -52,6 +52,9 @@ export function Player({
   const [inputUrl, setInputUrl] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const [isBannerVisible, setIsBannerVisible] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isDraggingSeek, setIsDraggingSeek] = useState(false);
 
   useEffect(() => {
     console.log('ReactPlayer object:', ReactPlayer);
@@ -71,14 +74,14 @@ export function Player({
       
       const diff = Math.abs(currentClientTime - expectedTime);
       
-      // If diff is larger than 2 seconds, force seek to sync
-      if (diff > 2) {
+      // Keep viewers tightly synced. The creator is allowed to scrub freely.
+      if (!isCreator && diff > 1.25) {
         if (typeof playerRef.current.seekTo === 'function') {
            playerRef.current.seekTo(expectedTime, 'seconds');
         }
       }
     }
-  }, [roomState.timestamp, roomState.isPlaying, roomState.lastUpdateAt, roomState.videoUrl]);
+  }, [roomState.timestamp, roomState.isPlaying, roomState.lastUpdateAt, roomState.videoUrl, isCreator, isCustomPlayer]);
 
   // Handle play state sync manually as fallback for web components
   useEffect(() => {
@@ -94,11 +97,17 @@ export function Player({
   useEffect(() => {
     const interval = setInterval(() => {
       if (!isCustomPlayer && playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-        onReportProgress(playerRef.current.getCurrentTime());
+        const time = playerRef.current.getCurrentTime();
+        onReportProgress(time);
+        if (!isDraggingSeek) setCurrentTime(time);
+        if (typeof playerRef.current.getDuration === 'function') {
+          const nextDuration = playerRef.current.getDuration();
+          if (Number.isFinite(nextDuration) && nextDuration > 0) setDuration(nextDuration);
+        }
       }
     }, 1000);
     return () => clearInterval(interval);
-  }, [onReportProgress, isCustomPlayer]);
+  }, [onReportProgress, isCustomPlayer, isDraggingSeek]);
 
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,6 +136,18 @@ export function Player({
   const handleSeek = (e: any) => {
     if (isCreator && playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
       onSeek(playerRef.current.getCurrentTime());
+    }
+  };
+
+  const handleSeekTo = (timestamp: number, shouldBroadcast = false) => {
+    if (!isCreator) return;
+    const nextTime = Math.max(0, Math.min(timestamp, duration || timestamp));
+    setCurrentTime(nextTime);
+    if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
+      playerRef.current.seekTo(nextTime, 'seconds');
+    }
+    if (shouldBroadcast) {
+      onSeek(nextTime);
     }
   };
 
@@ -218,9 +239,19 @@ export function Player({
               onPlay={handlePlay}
               onPause={handlePause}
               onSeeked={isCreator ? handleSeek : undefined}
+              onDurationChange={() => {
+                if (playerRef.current && typeof playerRef.current.getDuration === 'function') {
+                  const nextDuration = playerRef.current.getDuration();
+                  if (Number.isFinite(nextDuration) && nextDuration > 0) setDuration(nextDuration);
+                }
+              }}
+              onTimeUpdate={() => {
+                if (!playerRef.current || typeof playerRef.current.getCurrentTime !== 'function' || isDraggingSeek) return;
+                setCurrentTime(playerRef.current.getCurrentTime());
+              }}
               style={{ pointerEvents: isCreator ? 'auto' : 'none' }} // Revert: viewers cannot pause it manually by clicking
               config={({
-                youtube: { playerVars: { disablekb: isCreator ? 0 : 1 } }
+                youtube: { playerVars: { disablekb: isCreator ? 0 : 1, playsinline: 1, rel: 0 } }
               }) as any}
             />
           </div>
@@ -343,6 +374,33 @@ export function Player({
                 </div>
             )}
         </div>
+
+        {roomState.videoUrl && !isCustomPlayer && (
+          <div className="px-4 pb-4 -mt-1 flex items-center gap-3">
+            <span className="text-xs font-mono text-zinc-400 w-12 text-right">{formatTime(currentTime)}</span>
+            <input
+              type="range"
+              min={0}
+              max={duration || Math.max(currentTime, roomState.timestamp, 1)}
+              step={0.1}
+              value={currentTime}
+              disabled={!isCreator}
+              onMouseDown={() => isCreator && setIsDraggingSeek(true)}
+              onTouchStart={() => isCreator && setIsDraggingSeek(true)}
+              onChange={(e) => handleSeekTo(Number(e.target.value))}
+              onMouseUp={(e) => {
+                setIsDraggingSeek(false);
+                handleSeekTo(Number((e.target as HTMLInputElement).value), true);
+              }}
+              onTouchEnd={(e) => {
+                setIsDraggingSeek(false);
+                handleSeekTo(Number((e.target as HTMLInputElement).value), true);
+              }}
+              className="w-full accent-[#3B82F6] disabled:opacity-50"
+            />
+            <span className="text-xs font-mono text-zinc-400 w-12">{formatTime(duration)}</span>
+          </div>
+        )}
 
         {/* Sync Status Grid */}
         <div className="bg-[#0A0C10] p-4 border-t border-[#1F2937]">
