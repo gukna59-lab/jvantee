@@ -172,7 +172,7 @@ export const animeData: Anime[] = [
   {
     id: 20, title: 'Монстр', rating: 8.7, rank: 20, type: 'Сериалы',
     shikimori_id: '19',
-    img: 'https://cdn.myanimelist.net/images/anime/10/18297.jpg',
+    img: 'https://shikimori.one/system/animes/original/19.jpg',
     plot: longPlot('Хирург Тэнма спасает мальчика, связанного с серией преступлений.', 'Погоня по Европе — расследование о вине, выборе и природе зла.'),
     screenshots: ["https://shikimori.one/system/screenshots/original/a559c5e89bc0aa0ab4955aa9b70079ea9bda4cfb.jpg?1709190732", "https://shikimori.one/system/screenshots/original/fd57972f18b1059765d7c9eeb947b13e7f6f9ad9.jpg?1709190733", "https://shikimori.one/system/screenshots/original/7aea0350dee4f6950aef086835bd78f6fcdbf476.jpg?1709190734", "https://shikimori.one/system/screenshots/original/cbc592c344dfeb2c58bfdc7fdb4b645fbcaead15.jpg?1709190734"],
     episodes: 74, voiceovers: ['Субтитры', 'Любительская'], videoSrc: ''

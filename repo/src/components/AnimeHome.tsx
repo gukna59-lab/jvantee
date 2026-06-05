@@ -1,14 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Search, Grid, List, PlaySquare, TrendingUp, Star, Eye, ChevronRight, LayoutGrid, MonitorPlay, Film, Tv, Clock, Languages, ExternalLink } from 'lucide-react';
-import logoSrc from '../assets/images/jvante_logo_1780506650738.png';
+import logoSrc from '../assets/images/jvante_logo.svg';
 import { animeData, Anime } from '../data/animeData';
+import { HlsPlayer } from './HlsPlayer';
 
 interface AnimeHomeProps {
   onBack: () => void;
   user: any;
   username: string | null;
   avatar: string | null;
+}
+
+interface AnimeSource {
+  voice: string;
+  provider: 'anilibria' | 'animevost';
+  episodes: number[];
+  qualities?: string[];
 }
 
 export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
@@ -24,13 +32,77 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
   const [kodikLoading, setKodikLoading] = useState(false);
   const [kodikError, setKodikError] = useState<string | null>(null);
   const [showPlayerFallback, setShowPlayerFallback] = useState(false);
+  const [sourceOptions, setSourceOptions] = useState<AnimeSource[]>([]);
+  const [sourceLoading, setSourceLoading] = useState(false);
+  const [selectedQuality, setSelectedQuality] = useState('');
 
   React.useEffect(() => {
     setIsPlaying(false);
     setKodikUrl(null);
     setKodikError(null);
     setShowPlayerFallback(false);
-  }, [selectedAnime, selectedEpisode, selectedVoice]);
+  }, [selectedAnime, selectedEpisode, selectedVoice, selectedQuality]);
+
+  const selectedSource = sourceOptions.find(source => source.voice === selectedVoice);
+  const availableEpisodes = selectedSource?.episodes?.length
+    ? selectedSource.episodes
+    : Array.from({ length: selectedAnime?.episodes || 0 }, (_, index) => index + 1);
+  const availableQualities = selectedSource?.qualities || [];
+
+  React.useEffect(() => {
+    if (!selectedAnime) {
+      setSourceOptions([]);
+      return;
+    }
+
+    let cancelled = false;
+    setSourceLoading(true);
+    setSourceOptions([]);
+
+    const params = new URLSearchParams({
+      title: selectedAnime.title,
+      episodes: String(selectedAnime.episodes),
+    });
+
+    fetch(`/api/anime-sources?${params.toString()}`)
+      .then(response => response.json())
+      .then(data => {
+        if (cancelled) return;
+        const sources = Array.isArray(data.sources) ? data.sources as AnimeSource[] : [];
+        setSourceOptions(sources);
+        const firstSource = sources[0];
+        setSelectedVoice(firstSource?.voice || selectedAnime.voiceovers?.[0] || '');
+        setSelectedEpisode(firstSource?.episodes?.[0] || 1);
+        setSelectedQuality(firstSource?.qualities?.[0] || '');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setSourceOptions([]);
+        setSelectedVoice(selectedAnime.voiceovers?.[0] || '');
+        setSelectedEpisode(1);
+        setSelectedQuality('');
+      })
+      .finally(() => {
+        if (!cancelled) setSourceLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAnime]);
+
+  React.useEffect(() => {
+    if (!selectedSource) return;
+    if (!selectedSource.episodes.includes(selectedEpisode)) {
+      setSelectedEpisode(selectedSource.episodes[0] || 1);
+    }
+    if (selectedSource.qualities?.length && !selectedSource.qualities.includes(selectedQuality)) {
+      setSelectedQuality(selectedSource.qualities[0]);
+    }
+    if (!selectedSource.qualities?.length && selectedQuality) {
+      setSelectedQuality('');
+    }
+  }, [selectedSource, selectedEpisode, selectedQuality]);
 
   React.useEffect(() => {
     if (!kodikUrl) return;
@@ -39,7 +111,7 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
     return () => window.clearTimeout(timer);
   }, [kodikUrl]);
 
-  const fetchKodikPlayer = async (anime: Anime | null) => {
+  const fetchKodikPlayer = async (anime: Anime | null, qualityOverride = selectedQuality) => {
     if (!anime) return;
     setKodikLoading(true);
     setKodikError(null);
@@ -49,7 +121,17 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
       const params = new URLSearchParams({
         shikimoriId: anime.shikimori_id,
         episode: String(selectedEpisode),
+        title: anime.title,
       });
+      if (selectedVoice) {
+        params.set('voice', selectedVoice);
+      }
+      if (selectedSource?.provider) {
+        params.set('provider', selectedSource.provider);
+      }
+      if (qualityOverride) {
+        params.set('quality', qualityOverride);
+      }
       const response = await fetch(`/api/anime-player?${params.toString()}`);
       const data = await response.json().catch(() => ({}));
 
@@ -105,8 +187,8 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                  <ArrowLeft className="w-6 h-6" />
                </button>
                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-[#0F172A] rounded-xl flex items-center justify-center border border-[#1F2937] overflow-hidden">
-                     <img src={logoSrc} alt="Jvante" className="w-full h-full object-cover" />
+                  <div className="w-10 h-10 bg-[#0F172A] rounded-xl flex items-center justify-center border border-[#1F2937] overflow-hidden p-1">
+                     <img src={logoSrc} alt="Jvante" className="w-full h-full object-contain" />
                   </div>
                   <div className="hidden sm:block">
                      <h1 className="text-xl font-black tracking-tighter text-blue-500 leading-none">JVANTE</h1>
@@ -181,13 +263,13 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                    {filteredAnimeList.map((anime) => (
                       <motion.div 
                         whileHover={{ y: -5 }} 
                         key={anime.id} 
                         onClick={() => handleSelectAnime(anime)}
-                        className="group relative bg-[#11141A] border border-[#1F2937] rounded-3xl overflow-hidden cursor-pointer shadow-xl flex flex-col"
+                        className="group relative bg-[#11141A] border border-[#1F2937] rounded-2xl sm:rounded-3xl overflow-hidden cursor-pointer shadow-xl flex flex-col"
                       >
                          <div className="absolute top-2 left-2 z-10 bg-amber-500 text-[#0F172A] text-xs font-black px-2 py-1 rounded-lg flex items-center gap-1 shadow-lg">
                             <Star className="w-3 h-3 fill-current" /> {anime.rating}
@@ -280,7 +362,7 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                          </div>
                          <div className="flex justify-between items-center">
                             <span className="text-zinc-400 flex items-center gap-2"><Tv className="w-4 h-4" /> Эпизоды</span>
-                            <span className="text-white">{selectedAnime.episodes}</span>
+                            <span className="text-white">{availableEpisodes.length}</span>
                          </div>
                          <div className="flex justify-between items-center">
                             <span className="text-zinc-400 flex items-center gap-2"><TrendingUp className="w-4 h-4" /> Топ</span>
@@ -326,16 +408,40 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                       <div className="bg-[#0A0C10] border-b border-[#1F2937] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-2 sm:pb-0 hide-scrollbar">
                            <Languages className="w-5 h-5 text-zinc-500 shrink-0" />
-                           {selectedAnime.voiceovers.map(voice => (
+                           {(sourceOptions.length ? sourceOptions.map(source => source.voice) : selectedAnime.voiceovers).map(voice => (
                               <button 
                                  key={voice}
-                                 onClick={() => setSelectedVoice(voice)}
+                                 onClick={() => {
+                                   const source = sourceOptions.find(item => item.voice === voice);
+                                   setSelectedVoice(voice);
+                                   setSelectedEpisode(source?.episodes?.[0] || 1);
+                                   setSelectedQuality(source?.qualities?.[0] || '');
+                                 }}
                                  className={`px-3 py-1.5 text-sm font-semibold rounded-lg whitespace-nowrap transition-colors ${selectedVoice === voice ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 'text-zinc-400 hover:bg-[#1E293B]'}`}
                               >
                                  {voice}
                               </button>
                            ))}
+                           {sourceLoading && (
+                             <span className="px-3 py-1.5 text-sm text-zinc-500">Проверяю серии...</span>
+                           )}
                          </div>
+                         {selectedAnime.title === 'Ванпанчмен' && availableQualities.length > 1 && (
+                           <div className="flex items-center gap-2">
+                             {availableQualities.map(quality => (
+                               <button
+                                 key={quality}
+                                 onClick={() => {
+                                   setSelectedQuality(quality);
+                                   if (isPlaying) fetchKodikPlayer(selectedAnime, quality);
+                                 }}
+                                 className={`px-3 py-1.5 text-xs font-black rounded-lg border transition-colors ${selectedQuality === quality ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'border-[#1F2937] text-zinc-500 hover:text-white hover:bg-[#1E293B]'}`}
+                               >
+                                 {quality}p
+                               </button>
+                             ))}
+                           </div>
+                         )}
                       </div>
 
                        {/* Kodik Video Player */}
@@ -373,12 +479,15 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                              </div>
                            </>
                          ) : kodikUrl ? (
-                           kodikUrl.endsWith('.mp4') ? (
-                             <video 
-                               src={kodikUrl} 
-                               controls 
-                               autoPlay 
-                               className="w-full h-full outline-none"
+                           /\.m3u8(\?|$)/i.test(kodikUrl) ? (
+                             <HlsPlayer src={kodikUrl} />
+                           ) : /\.mp4(\?|$)/i.test(kodikUrl) ? (
+                             <video
+                               src={kodikUrl}
+                               controls
+                               autoPlay
+                               playsInline
+                               className="w-full h-full bg-black outline-none"
                              />
                            ) : (
                              <iframe
@@ -423,13 +532,13 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                         <div className="p-4 bg-[#0F172A]">
                            <h4 className="text-sm font-bold text-zinc-400 mb-3 ml-1 flex items-center gap-2"><Clock className="w-4 h-4" /> Выбор серии</h4>
                            <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                              {Array.from({ length: selectedAnime.episodes }).map((_, i) => (
+                              {availableEpisodes.map((episode) => (
                                  <button 
-                                    key={i}
-                                    onClick={() => setSelectedEpisode(i + 1)}
-                                    className={`w-12 h-10 rounded-xl font-bold text-sm transition-all flex items-center justify-center ${selectedEpisode === i + 1 ? 'bg-blue-600 text-white shadow-lg' : 'bg-[#1E293B] text-zinc-400 hover:bg-[#2DD4BF]/20 hover:text-[#2DD4BF] border border-[#334155]'}`}
+                                    key={episode}
+                                    onClick={() => setSelectedEpisode(episode)}
+                                    className={`w-12 h-10 rounded-xl font-bold text-sm transition-all flex items-center justify-center ${selectedEpisode === episode ? 'bg-blue-600 text-white shadow-lg' : 'bg-[#1E293B] text-zinc-400 hover:bg-[#2DD4BF]/20 hover:text-[#2DD4BF] border border-[#334155]'}`}
                                  >
-                                    {i + 1}
+                                    {episode}
                                  </button>
                               ))}
                            </div>
