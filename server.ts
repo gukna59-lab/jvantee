@@ -117,6 +117,13 @@ async function startServer() {
     hls_1080?: unknown;
   };
 
+  type AnimeSource = {
+    voice: string;
+    provider: 'anilibria' | 'animevost';
+    episodes: number[];
+    qualities?: string[];
+  };
+
   const normalizeKodikUrl = (value: unknown): string | null => {
     if (typeof value !== 'string') return null;
     const url = value.trim();
@@ -154,6 +161,31 @@ async function startServer() {
     return normalizeKodikUrl(result.link) || normalizeKodikUrl(result.url) || normalizeKodikUrl(result.src);
   };
 
+  const getEpisodeNumber = (value: unknown) => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value !== 'string') return null;
+    const match = value.match(/\d+/);
+    return match ? Number(match[0]) : null;
+  };
+
+  const range = (from: number, to: number) => {
+    return Array.from({ length: Math.max(0, to - from + 1) }, (_, index) => from + index);
+  };
+
+  const manualSourceEpisodes = (provider: AnimeSource['provider'], title: string, episodes: number[]) => {
+    const normalized = simplifyTitle(title);
+
+    if (provider === 'anilibria' && normalized === 'наруто') {
+      return [1];
+    }
+
+    if (provider === 'anilibria' && normalized === 'блич') {
+      return episodes.filter(episode => episode !== 343 && episode !== 344);
+    }
+
+    return episodes;
+  };
+
   const normalizeExternalUrl = (value: unknown): string | null => {
     if (typeof value !== 'string') return null;
     const url = value.trim();
@@ -170,6 +202,17 @@ async function startServer() {
       : '';
   };
 
+  const getTitleQueries = (title: string) => {
+    const normalized = simplifyTitle(title);
+    const aliases = [title];
+
+    if (normalized.includes('каменный океан')) {
+      aliases.push('Каменный океан');
+    }
+
+    return Array.from(new Set(aliases.filter(Boolean)));
+  };
+
   const getAniLibriaScore = (release: AniLibriaRelease, title: string) => {
     const query = simplifyTitle(title);
     if (!query) return 0;
@@ -181,6 +224,7 @@ async function startServer() {
     ].filter(Boolean);
 
     if (names.some(name => name === query)) return 100;
+    if (names.some(name => name.includes(query) || query.includes(name))) return 70;
 
     const queryWords = new Set(query.split(' ').filter(word => word.length > 2));
     if (!queryWords.size) return 0;
@@ -189,51 +233,10 @@ async function startServer() {
       return Array.from(queryWords).filter(word => nameWords.has(word)).length / queryWords.size;
     }), 0);
 
-    const isPrefix = names.some(name => name.startsWith(query) || name.includes(query + ' '));
-    return bestOverlap >= 0.75 && isPrefix ? 50 : 0;
+    return bestOverlap >= 0.75 ? 50 : 0;
   };
 
-  const fetchAnimeVostPlayer = async (title: string, episode: string) => {
-    if (!title) return null;
-
-    try {
-      const searchRes = await fetch("https://api.animevost.org/v1/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "name=" + encodeURIComponent(title)
-      });
-      const searchData = await searchRes.json();
-      if (!searchData || !searchData.data || !searchData.data.length) return null;
-
-      const match = searchData.data.find((d: any) => {
-        const ruTitle = d.title.split('/')[0].split('[')[0].trim().toLowerCase();
-        const tl = title.toLowerCase();
-        return ruTitle === tl || ruTitle.startsWith(tl + ' ') || ruTitle.endsWith(' ' + tl);
-      }) || searchData.data[0];
-
-      const playlistRes = await fetch("https://api.animevost.org/v1/playlist", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: "id=" + match.id
-      });
-      const playlistData = await playlistRes.json();
-      if (!Array.isArray(playlistData)) return null;
-
-      const ep = playlistData.find((e: any) => e.name.includes(`${episode} серия`));
-      if (ep && (ep.hd || ep.std)) {
-        return {
-          url: ep.hd || ep.std,
-          provider: 'animevost',
-          releaseId: String(match.id)
-        };
-      }
-    } catch (e) {
-      console.warn("AnimeVost lookup failed:", e);
-    }
-    return null;
-  };
-
-  const fetchAniLibriaPlayer = async (title: string, episode: string) => {
+  const fetchAniLibriaPlayer = async (title: string, episode: string, quality?: string) => {
     if (!title) return null;
 
     const searchUrl = new URL('https://anilibria.top/api/v1/app/search/releases');
@@ -256,48 +259,257 @@ async function startServer() {
       .filter(item => item.score > 0)
       .sort((a, b) => b.score - a.score);
 
-    for (const item of scoredReleases) {
-      const match = item.release;
-      const releaseId = typeof match?.id === 'number' || typeof match?.id === 'string' ? String(match.id) : '';
-      if (!match || !releaseId) continue;
+    const match = scoredReleases[0]?.release;
+    const releaseId = typeof match?.id === 'number' || typeof match?.id === 'string' ? String(match.id) : '';
+    if (!match || !releaseId) return null;
 
-      const releaseUrl = new URL(`https://anilibria.top/api/v1/anime/releases/${encodeURIComponent(releaseId)}`);
-      releaseUrl.searchParams.set('include', 'episodes');
+    const releaseUrl = new URL(`https://anilibria.top/api/v1/anime/releases/${encodeURIComponent(releaseId)}`);
+    releaseUrl.searchParams.set('include', 'episodes');
 
-      const releaseResponse = await fetch(releaseUrl, {
-        headers: {
-          Accept: 'application/json',
-          'User-Agent': 'Jvante anime player',
-        },
-      });
+    const releaseResponse = await fetch(releaseUrl, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Jvante anime player',
+      },
+    });
 
-      if (releaseResponse.ok) {
-        const releaseData = await releaseResponse.json();
-        const episodes = Array.isArray(releaseData?.episodes) ? releaseData.episodes as AniLibriaEpisode[] : [];
-        const episodeNumber = Number(episode);
-        const selectedEpisode = episodes.find(item => Number(item.ordinal) === episodeNumber)
-          || episodes.find(item => Number(item.sort_order) === episodeNumber);
-        const hlsUrl = normalizeExternalUrl(selectedEpisode?.hls_1080)
-          || normalizeExternalUrl(selectedEpisode?.hls_720)
-          || normalizeExternalUrl(selectedEpisode?.hls_480);
+    if (releaseResponse.ok) {
+      const releaseData = await releaseResponse.json();
+      const episodes = Array.isArray(releaseData?.episodes) ? releaseData.episodes as AniLibriaEpisode[] : [];
+      const episodeNumber = Number(episode);
+      const availableEpisodes = manualSourceEpisodes('anilibria', title, episodes
+        .map(item => getEpisodeNumber(item.ordinal) || getEpisodeNumber(item.sort_order))
+        .filter((item): item is number => !!item));
 
-        if (hlsUrl) {
-          return {
-            url: hlsUrl,
-            provider: 'anilibria',
-            releaseId,
-          };
-        }
+      if (!availableEpisodes.includes(episodeNumber)) return null;
+
+      const selectedEpisode = episodes.find(item => Number(item.ordinal) === episodeNumber)
+        || episodes.find(item => Number(item.sort_order) === episodeNumber)
+        || (episodeNumber === 1 ? episodes[0] : null);
+      const qualityUrls = {
+        '1080': normalizeExternalUrl(selectedEpisode?.hls_1080),
+        '720': normalizeExternalUrl(selectedEpisode?.hls_720),
+        '480': normalizeExternalUrl(selectedEpisode?.hls_480),
+      };
+      const hlsUrl = qualityUrls[quality as keyof typeof qualityUrls]
+        || qualityUrls['1080']
+        || qualityUrls['720']
+        || qualityUrls['480'];
+
+      if (hlsUrl) {
+        return {
+          url: hlsUrl,
+          provider: 'anilibria',
+          releaseId,
+          qualities: ['1080', '720', '480'].filter(label => !!qualityUrls[label as keyof typeof qualityUrls]),
+        };
       }
+    }
+
+    const externalUrl = normalizeExternalUrl(match.external_player);
+    return externalUrl ? { url: externalUrl, provider: 'anilibria', releaseId } : null;
+  };
+
+  const getAniLibriaSource = async (title: string): Promise<AnimeSource | null> => {
+    for (const query of getTitleQueries(title)) {
+      const release = await getAniLibriaRelease(query);
+      if (!release) continue;
+
+      const episodes = release.episodes
+        .map(episode => getEpisodeNumber(episode.ordinal) || getEpisodeNumber(episode.sort_order))
+        .filter((episode): episode is number => !!episode)
+        .sort((a, b) => a - b);
+
+      const availableEpisodes = manualSourceEpisodes('anilibria', title, Array.from(new Set(episodes)));
+      if (!availableEpisodes.length) continue;
+
+      const qualities = ['1080', '720', '480'].filter(label => release.episodes.some(episode => {
+        if (label === '1080') return !!normalizeExternalUrl(episode.hls_1080);
+        if (label === '720') return !!normalizeExternalUrl(episode.hls_720);
+        return !!normalizeExternalUrl(episode.hls_480);
+      }));
+
+      return {
+        voice: 'AniLibria',
+        provider: 'anilibria',
+        episodes: availableEpisodes,
+        qualities: qualities.length ? qualities : undefined,
+      };
     }
 
     return null;
   };
 
+  const parseAnimeVostTitle = (value: unknown) => {
+    if (typeof value !== 'string') return '';
+    return simplifyTitle(value.split('/')[0].split('[')[0]);
+  };
+
+  const getAnimeVostMatch = async (title: string) => {
+    if (!title) return null;
+
+    const response = await fetch('https://api.animevost.org/v1/search', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json',
+        'User-Agent': 'Jvante anime player',
+      },
+      body: `name=${encodeURIComponent(title)}`,
+    });
+
+    if (!response.ok) return null;
+
+    const data = await response.json();
+    const results = Array.isArray(data?.data) ? data.data : [];
+    const normalizedTitle = simplifyTitle(title);
+
+    return results.find((item: any) => parseAnimeVostTitle(item.title) === normalizedTitle)
+      || results.find((item: any) => {
+        const itemTitle = parseAnimeVostTitle(item.title);
+        return itemTitle.startsWith(`${normalizedTitle} `) || itemTitle.includes(` ${normalizedTitle} `);
+      })
+      || null;
+  };
+
+  const getAnimeVostPlaylist = async (releaseId: string | number) => {
+    const response = await fetch('https://api.animevost.org/v1/playlist', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json',
+        'User-Agent': 'Jvante anime player',
+      },
+      body: `id=${encodeURIComponent(String(releaseId))}`,
+    });
+
+    if (!response.ok) return [];
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  };
+
+  const getAnimeVostSource = async (title: string): Promise<AnimeSource | null> => {
+    const match = await getAnimeVostMatch(title);
+    if (!match?.id) return null;
+
+    const playlist = await getAnimeVostPlaylist(match.id);
+    const episodes = playlist
+      .map((episode: any) => getEpisodeNumber(episode.name))
+      .filter((episode: number | null): episode is number => !!episode)
+      .sort((a: number, b: number) => a - b);
+
+    if (!episodes.length) return null;
+    const qualities = ['720', '480'].filter(label => playlist.some((episode: any) => {
+      return label === '720' ? !!normalizeExternalUrl(episode.hd) : !!normalizeExternalUrl(episode.std);
+    }));
+
+    return {
+      voice: 'AnimeVost',
+      provider: 'animevost',
+      episodes: Array.from(new Set(episodes)),
+      qualities: qualities.length ? qualities : undefined,
+    };
+  };
+
+  const fetchAnimeVostPlayer = async (title: string, episode: string, quality?: string) => {
+    const match = await getAnimeVostMatch(title);
+    if (!match?.id) return null;
+
+    const playlist = await getAnimeVostPlaylist(match.id);
+    const episodeNumber = Number(episode);
+    const selectedEpisode = playlist.find((item: any) => getEpisodeNumber(item.name) === episodeNumber);
+    if (!selectedEpisode) return null;
+
+    const qualityUrls = {
+      '720': normalizeExternalUrl(selectedEpisode.hd),
+      '480': normalizeExternalUrl(selectedEpisode.std),
+    };
+    const url = qualityUrls[quality as keyof typeof qualityUrls] || qualityUrls['720'] || qualityUrls['480'];
+    if (!url) return null;
+
+    return {
+      url,
+      provider: 'animevost',
+      releaseId: String(match.id),
+      qualities: ['720', '480'].filter(label => !!qualityUrls[label as keyof typeof qualityUrls]),
+    };
+  };
+
+  const getAniLibriaRelease = async (title: string) => {
+    if (!title) return null;
+
+    const searchUrl = new URL('https://anilibria.top/api/v1/app/search/releases');
+    searchUrl.searchParams.set('query', title);
+
+    const searchResponse = await fetch(searchUrl, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Jvante anime player',
+      },
+    });
+
+    if (!searchResponse.ok) return null;
+
+    const releases = await searchResponse.json();
+    if (!Array.isArray(releases)) return null;
+
+    const scoredReleases = (releases as AniLibriaRelease[])
+      .map(release => ({ release, score: getAniLibriaScore(release, title) }))
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    const match = scoredReleases[0]?.release;
+    const releaseId = typeof match?.id === 'number' || typeof match?.id === 'string' ? String(match.id) : '';
+    if (!match || !releaseId) return null;
+
+    const releaseUrl = new URL(`https://anilibria.top/api/v1/anime/releases/${encodeURIComponent(releaseId)}`);
+    releaseUrl.searchParams.set('include', 'episodes');
+
+    const releaseResponse = await fetch(releaseUrl, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Jvante anime player',
+      },
+    });
+
+    if (!releaseResponse.ok) return null;
+    const releaseData = await releaseResponse.json();
+    const episodes = Array.isArray(releaseData?.episodes) ? releaseData.episodes as AniLibriaEpisode[] : [];
+
+    return {
+      id: releaseId,
+      release: match,
+      episodes,
+    };
+  };
+
+  app.get('/api/anime-sources', async (req, res) => {
+    const title = typeof req.query.title === 'string' ? req.query.title.trim() : '';
+    const fallbackEpisodes = typeof req.query.episodes === 'string' ? Number(req.query.episodes) : 0;
+
+    if (!title) {
+      res.status(400).json({ error: 'Не передано название аниме.' });
+      return;
+    }
+
+    const sourceResults = await Promise.allSettled([
+      getAniLibriaSource(title),
+      getAnimeVostSource(title),
+    ]);
+
+    const sources = sourceResults
+      .map(result => result.status === 'fulfilled' ? result.value : null)
+      .filter((source): source is AnimeSource => !!source);
+
+    res.json({ sources });
+  });
+
   app.get('/api/anime-player', async (req, res) => {
     const shikimoriId = typeof req.query.shikimoriId === 'string' ? req.query.shikimoriId.trim() : '';
     const episode = typeof req.query.episode === 'string' ? req.query.episode.trim() : '1';
     const voice = typeof req.query.voice === 'string' ? req.query.voice.trim().toLowerCase() : '';
+    const provider = typeof req.query.provider === 'string' ? req.query.provider.trim().toLowerCase() : '';
+    const quality = typeof req.query.quality === 'string' ? req.query.quality.trim() : '';
     const title = typeof req.query.title === 'string' ? req.query.title.trim() : '';
     const token = process.env.KODIK_API_TOKEN;
     let aniLibriaPlayer: Awaited<ReturnType<typeof fetchAniLibriaPlayer>> = null;
@@ -308,16 +520,31 @@ async function startServer() {
     }
 
     try {
-      aniLibriaPlayer = await fetchAniLibriaPlayer(title, episode);
-      if (!aniLibriaPlayer) {
-        aniLibriaPlayer = await fetchAnimeVostPlayer(title, episode);
+      if (provider === 'animevost' || voice.includes('animevost')) {
+        const animeVostPlayer = await fetchAnimeVostPlayer(title, episode, quality);
+        if (animeVostPlayer) {
+          res.json(animeVostPlayer);
+          return;
+        }
+        res.status(404).json({ error: 'AnimeVost не вернул эту серию для выбранной озвучки.' });
+        return;
+      }
+
+      for (const query of getTitleQueries(title)) {
+        aniLibriaPlayer = await fetchAniLibriaPlayer(query, episode, quality);
+        if (aniLibriaPlayer) break;
       }
     } catch (error) {
-      console.warn('Player lookup failed:', error);
+      console.warn('AniLibria player lookup failed:', error);
     }
 
     if (aniLibriaPlayer) {
       res.json(aniLibriaPlayer);
+      return;
+    }
+
+    if (provider === 'anilibria' || voice.includes('anilibria')) {
+      res.status(404).json({ error: 'AniLibria не вернула эту серию для выбранной озвучки.' });
       return;
     }
 
@@ -612,14 +839,9 @@ async function startServer() {
       });
     });
 
-    socket.on('force_sync', (currentTimestamp) => {
+    socket.on('force_sync', () => {
       if (!currentRoomId || !rooms[currentRoomId]) return;
       if (!canControlPlayback(rooms[currentRoomId], socket.id, currentUser?.uid)) return;
-
-      if (typeof currentTimestamp === 'number') {
-        rooms[currentRoomId].timestamp = currentTimestamp;
-        rooms[currentRoomId].lastUpdateAt = Date.now();
-      }
 
       // Broadcast the last known good state
       io.to(currentRoomId).emit('sync_playback', {

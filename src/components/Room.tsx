@@ -3,12 +3,10 @@ import { socket } from '../lib/socket';
 import { RoomState, User, Message } from '../types';
 import { Player } from './Player';
 import { Chat } from './Chat';
-import logoSrc from '../assets/images/jvante_logo_1780506650738.png';
+import logoSrc from '../assets/images/jvante_logo.svg';
 import { useVoiceChat } from '../hooks/useVoiceChat';
 import { Mic, MicOff, Smile, Users, X, UserPlus, Globe, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { db } from '../firebase';
-import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface RoomProps {
   roomId: string;
@@ -53,44 +51,14 @@ export function Room({ roomId, roomName, username, uid, avatar, onLeave, isPubli
      return () => clearInterval(interval);
   }, [showInviteModal]);
 
-  // Fetch Friends
+  // Local-login mode has no shared friends database.
   useEffect(() => {
-     if (!uid || !showInviteModal) return;
-     const loadFriends = async () => {
-        const userDoc = await getDoc(doc(db, 'users', uid));
-        if (userDoc.exists() && userDoc.data().friends) {
-           const fIds = userDoc.data().friends as string[];
-           const profiles = await Promise.all(
-             fIds.map(async (id) => {
-               const d = await getDoc(doc(db, 'users', id));
-               if (d.exists()) {
-                 return { id: d.id, ...d.data() };
-               }
-               return null;
-             })
-           );
-           setFriendsList(profiles.filter(p => p !== null));
-        }
-     };
-     loadFriends();
-  }, [uid, showInviteModal]);
+     if (!showInviteModal) return;
+     setFriendsList([]);
+  }, [showInviteModal]);
 
   const handleInviteFriend = async (friendId: string) => {
-     if (!uid) return;
-     try {
-        await addDoc(collection(db, 'room_invites'), {
-           to: friendId,
-           from: uid,
-           fromUsername: username,
-           roomId: roomId,
-           roomName: roomState?.name || roomName || `Комната ${roomId}`,
-           isPublic: isPublic,
-           createdAt: serverTimestamp()
-        });
-        setSentInvites(prev => [...prev, friendId]);
-     } catch (e) {
-        console.error("error inviting friend", e);
-     }
+     setSentInvites(prev => [...prev, friendId]);
   };
 
 
@@ -220,7 +188,7 @@ export function Room({ roomId, roomName, username, uid, avatar, onLeave, isPubli
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg overflow-hidden border border-[#1F2937] bg-[#0F172A]">
-              <img src={logoSrc} alt="Jvante Logo" className="w-full h-full object-cover" />
+              <img src={logoSrc} alt="Jvante Logo" className="w-full h-full object-contain p-1" />
             </div>
             <div className="text-xl lg:text-2xl font-black tracking-tighter text-[#3B82F6]">JVANTE</div>
           </div>

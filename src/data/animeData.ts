@@ -7,6 +7,7 @@ export interface Anime {
   type: 'Сериалы' | 'Фильмы' | 'ONA';
   plot: string;
   screenshots: string[];
+  episodeRatings?: Record<number, string>;
   episodes: number;
   voiceovers: string[];
   videoSrc: string;
@@ -17,7 +18,15 @@ const longPlot = (base: string, extra: string) =>
   `${base} ${extra} История раскрывается через выборы героев, цену силы и попытки сохранить себя в мире, где доверие дается тяжело.`;
 
 export const animeData: Anime[] = [
-    {
+  {
+    id: 1, title: 'Атака титанов', rating: 9.1, rank: 1, type: 'Сериалы',
+    shikimori_id: '16498',
+    img: 'https://cdn.myanimelist.net/images/anime/10/47347.jpg',
+    plot: longPlot('Люди живут за огромными стенами, спасаясь от титанов.', 'Эрен, Микаса и Армин оказываются внутри войны, где враг перестаёт быть простым чудовищем.'),
+    screenshots: ["https://shikimori.one/system/screenshots/original/6bd6bcd45831dec851e029486d8b08bea5bd5615.jpg?1656089341", "https://shikimori.one/system/screenshots/original/3d5d710f743d74634ba03a79c0ee0f03d41475ac.jpg?1656089344", "https://shikimori.one/system/screenshots/original/fb63e2b49e78a980fa9fb8896cf3ed42965e8b23.jpg?1656089347", "https://shikimori.one/system/screenshots/original/1133e286d94b5fe2c9187311f893c56ae85fc58f.jpg?1656089349"],
+    episodes: 25, voiceovers: ['AniLibria', 'Студийная Банда', 'Субтитры'], videoSrc: ''
+  },
+  {
     id: 2, title: 'Тетрадь смерти', rating: 8.9, rank: 2, type: 'Сериалы',
     shikimori_id: '1535',
     img: 'https://cdn.myanimelist.net/images/anime/9/9453.jpg',
@@ -33,7 +42,15 @@ export const animeData: Anime[] = [
     screenshots: ["https://shikimori.one/system/screenshots/original/109e67ae974e1950b16ea58abacfa79c78ae39b2.jpg?1578674893", "https://shikimori.one/system/screenshots/original/bab2700a71b2b2d1b24a20d3b409d3f18aedd08e.jpg?1578674894", "https://shikimori.one/system/screenshots/original/70a7a1ebb749494b36ce9f5279fa82d8fa897e3e.jpg?1578674895", "https://shikimori.one/system/screenshots/original/44f1247bdaae6691b255d4f9f45914ea04713458.jpg?1578674896"],
     episodes: 64, voiceovers: ['AniLibria.TV'], videoSrc: ''
   },
-    {
+  {
+    id: 4, title: 'Унесённые призраками', rating: 8.6, rank: 4, type: 'Фильмы',
+    shikimori_id: '199',
+    img: 'https://cdn.myanimelist.net/images/anime/6/79597.jpg',
+    plot: longPlot('Тихиро попадает в мир духов, где её родители превращены.', 'Работая в бане ведьмы Юбабы, девочка учится не терять имя и чувство добра.'),
+    screenshots: ["https://shikimori.one/system/screenshots/original/9037d4886b92dc572c020c0fd1ca2d6f3481adc3.jpg?1578674338", "https://shikimori.one/system/screenshots/original/df5ae1684d419b2a1eaa06ce5259621c1529d5c3.jpg?1578674339", "https://shikimori.one/system/screenshots/original/51e680f65f5e19bb47b7f5f9c55a8f0a8270a7d5.jpg?1578674340", "https://shikimori.one/system/screenshots/original/1032b87d3db8e0bb62339134c5ff5c937726396b.jpg?1578674341"],
+    episodes: 1, voiceovers: ['Дубляж', 'Субтитры'], videoSrc: ''
+  },
+  {
     id: 5, title: 'Твоё имя', rating: 8.4, rank: 5, type: 'Фильмы',
     shikimori_id: '32281',
     img: 'https://cdn.myanimelist.net/images/anime/5/87048.jpg',
@@ -73,7 +90,23 @@ export const animeData: Anime[] = [
     screenshots: ["https://shikimori.one/system/screenshots/original/98e4f835e3f2ae3d32f94322b02220001bb4f5e9.jpg?1656764254", "https://shikimori.one/system/screenshots/original/d7a06183cbd282a74d0a4b35bf9b3600416b99f1.jpg?1656764254", "https://shikimori.one/system/screenshots/original/85a22fa7048ea5d61e298dd6d029d83322d503b5.jpg?1656764255", "https://shikimori.one/system/screenshots/original/b8624ab8ea57a18cff1affb6aba932798fbbbf92.jpg?1656764255"],
     episodes: 24, voiceovers: ['AniLibria.TV'], videoSrc: ''
   },
-      {
+  {
+    id: 10, title: 'Ходячий замок', rating: 8.2, rank: 10, type: 'Фильмы',
+    shikimori_id: '431',
+    img: 'https://cdn.myanimelist.net/images/anime/5/75810.jpg',
+    plot: longPlot('Софи превращают в старуху, и она отправляется в странствие с Хаулом.', 'Волшебный замок становится домом для людей, которые прячут раны за масками.'),
+    screenshots: ["https://shikimori.one/system/screenshots/original/45c46bc987af41c3eab412adf7e131c0c95100b2.jpg?1578730246", "https://shikimori.one/system/screenshots/original/a83d13615daa91e62575610164ddd01cc4a56e90.jpg?1578730247", "https://shikimori.one/system/screenshots/original/fa00e64ebe379528788441766d009face2d4da03.jpg?1578730248", "https://shikimori.one/system/screenshots/original/1b92be052b5efe73625cd1a93ba823a8a1a080e4.jpg?1578730248"],
+    episodes: 1, voiceovers: ['Дубляж', 'Субтитры'], videoSrc: ''
+  },
+  {
+    id: 11, title: 'Человек-бензопила', rating: 8.4, rank: 11, type: 'Сериалы',
+    shikimori_id: '44511',
+    img: 'https://cdn.myanimelist.net/images/anime/1806/126216.jpg',
+    plot: longPlot('Дэндзи живёт в долгах и охотится на демонов вместе с Почитой.', 'Попав в Бюро безопасности, он сталкивается с властью и людьми которым сложно доверять.'),
+    screenshots: ["https://shikimori.one/system/screenshots/original/671b95a264f37f6f0d3e34d32966f013d2e4b4fa.jpg?1665505144", "https://shikimori.one/system/screenshots/original/c816df0ea5f7b1e463265569c1832872c7a0f3a0.jpg?1665505145", "https://shikimori.one/system/screenshots/original/1c7ccd92d03eb4c5dba07bddf4b97db06f39dc4a.jpg?1665505145", "https://shikimori.one/system/screenshots/original/95b72c58640ccc2866a02dfdbd30790ab5d5342f.jpg?1665505145"],
+    episodes: 12, voiceovers: ['AniLibria', 'Студийная Банда', 'Субтитры'], videoSrc: ''
+  },
+  {
     id: 12, title: 'Магическая битва', rating: 8.6, rank: 12, type: 'Сериалы',
     shikimori_id: '40748',
     img: 'https://cdn.myanimelist.net/images/anime/1171/109222.jpg',
@@ -105,7 +138,15 @@ export const animeData: Anime[] = [
     screenshots: ["https://shikimori.one/system/screenshots/original/667765735eb0807be365a01fc9a871b96c3a9f12.jpg?1656088145", "https://shikimori.one/system/screenshots/original/e89f29419c07739ae01f0217d12e45d72efc402f.jpg?1656088145", "https://shikimori.one/system/screenshots/original/9b2d0b15b09e9ac190610b2034d0d6f1446785f2.jpg?1656088146", "https://shikimori.one/system/screenshots/original/6b3c71c5169eb7877e25e97237e0b5e73d31dfe2.jpg?1656088147"],
     episodes: 13, voiceovers: ['AniLibria.TV'], videoSrc: ''
   },
-    {
+  {
+    id: 16, title: 'Ван-Пис', rating: 9.0, rank: 16, type: 'Сериалы',
+    shikimori_id: '21',
+    img: 'https://cdn.myanimelist.net/images/anime/6/73245.jpg',
+    plot: longPlot('Луффи собирает команду пиратов и ищет легендарное сокровище One Piece.', 'Путешествие по морям — хроника дружбы, свободы и битв.'),
+    screenshots: ["https://shikimori.one/system/screenshots/original/625f8903677439e2a2a34878b8f619d57f537f0e.jpg?1620559070", "https://shikimori.one/system/screenshots/original/67af2e8f99488836ac0f0fb51ec15c30f52f229c.jpg?1620559070", "https://shikimori.one/system/screenshots/original/777f7cb5e81dba4301853fa718c97cb51b1e69fc.jpg?1620559071", "https://shikimori.one/system/screenshots/original/4758713f9c69d904235d5755608219c17923d0a4.jpg?1620559071"],
+    episodes: 100, voiceovers: ['2x2', 'AniLibria', 'Субтитры'], videoSrc: ''
+  },
+  {
     id: 17, title: 'Наруто', rating: 8.4, rank: 17, type: 'Сериалы',
     shikimori_id: '20',
     img: 'https://cdn.myanimelist.net/images/anime/13/17405.jpg',
@@ -132,12 +173,20 @@ export const animeData: Anime[] = [
   {
     id: 20, title: 'Монстр', rating: 8.7, rank: 20, type: 'Сериалы',
     shikimori_id: '19',
-    img: 'https://cdn.myanimelist.net/images/anime/10/18297.jpg',
+    img: 'https://shikimori.one/system/animes/original/19.jpg',
     plot: longPlot('Хирург Тэнма спасает мальчика, связанного с серией преступлений.', 'Погоня по Европе — расследование о вине, выборе и природе зла.'),
     screenshots: ["https://shikimori.one/system/screenshots/original/a559c5e89bc0aa0ab4955aa9b70079ea9bda4cfb.jpg?1709190732", "https://shikimori.one/system/screenshots/original/fd57972f18b1059765d7c9eeb947b13e7f6f9ad9.jpg?1709190733", "https://shikimori.one/system/screenshots/original/7aea0350dee4f6950aef086835bd78f6fcdbf476.jpg?1709190734", "https://shikimori.one/system/screenshots/original/cbc592c344dfeb2c58bfdc7fdb4b645fbcaead15.jpg?1709190734"],
     episodes: 74, voiceovers: ['AniLibria.TV'], videoSrc: ''
   },
-    {
+  {
+    id: 21, title: 'Сад изящных слов', rating: 7.8, rank: 21, type: 'Фильмы',
+    shikimori_id: '19755',
+    img: 'https://cdn.myanimelist.net/images/anime/1595/107426.jpg',
+    plot: longPlot('Юный ученик, мечтающий шить обувь, встречает женщину в дождливом саду.', 'Тихие встречи — способ пережить одиночество и шагнуть вперёд.'),
+    screenshots: ["https://shikimori.one/system/screenshots/original/aa6bc47f764e6d85681ecd4d98965358c1dac8fb.jpg?1694249505", "https://shikimori.one/system/screenshots/original/4428289e9450854abebcba5a92351f3c4432018c.jpg?1694249506", "https://shikimori.one/system/screenshots/original/9823978bced72d75e181ca0df83b6048c84f67f4.jpg?1694249506", "https://shikimori.one/system/screenshots/original/5b87f15145110d85a095823cc3dc2855d9236d1d.jpg?1694249507"],
+    episodes: 1, voiceovers: ['Дубляж', 'Субтитры'], videoSrc: ''
+  },
+  {
     id: 22, title: 'Вайолет Эвергарден', rating: 8.6, rank: 22, type: 'Сериалы',
     shikimori_id: '33352',
     img: 'https://cdn.myanimelist.net/images/anime/1795/95088.jpg',
@@ -145,7 +194,7 @@ export const animeData: Anime[] = [
     screenshots: ["https://shikimori.one/system/screenshots/original/9a6b9eb01358a84226ff89623b4ab6347a8ab9d4.jpg?1633466854", "https://shikimori.one/system/screenshots/original/0cac34d42b355eb8f55866ca9bac746c4f531abb.jpg?1633466854", "https://shikimori.one/system/screenshots/original/ab7f8bd4a066287b67236c00d2de21481b580a1d.jpg?1633466854", "https://shikimori.one/system/screenshots/original/669e99c959f211c6669db5821605b4a2a9973ee1.jpg?1633466854"],
     episodes: 13, voiceovers: ['AniLibria.TV'], videoSrc: ''
   },
-          {
+  {
     id: 27, title: 'Город, в котором меня нет', rating: 8.3, rank: 27, type: 'Сериалы',
     shikimori_id: '31043',
     img: 'https://cdn.myanimelist.net/images/anime/10/77957.jpg',
@@ -161,7 +210,7 @@ export const animeData: Anime[] = [
     screenshots: ["https://shikimori.one/system/screenshots/original/47c1d5b648e108f97d5344e32055d41017d134da.jpg?1656082680","https://shikimori.one/system/screenshots/original/3b96f4e0f578a3d6f4220f10f227ea24237cea1a.jpg?1656082681","https://shikimori.one/system/screenshots/original/29b201eac1257b7b2fda3be25842843be6b82153.jpg?1656082682","https://shikimori.one/system/screenshots/original/6988c53d1f70d602e57df87571b59f3d8263b136.jpg?1656082682"],
     episodes: 25, voiceovers: ['AniLibria.TV'], videoSrc: ''
   },
-    {
+  {
     id: 30, title: 'ДжоДжо', rating: 8.4, rank: 30, type: 'Сериалы',
     shikimori_id: '14719',
     img: 'https://cdn.myanimelist.net/images/anime/3/40409.jpg',
@@ -184,8 +233,7 @@ export const animeData: Anime[] = [
     plot: longPlot('Ято — бог без святилища, готовый выполнить любую работу за пять иен.', 'Его судьба пересекается со школьницей, что меняет все.'),
     screenshots: ["https://shikimori.one/system/screenshots/original/61599ec39314f848f2318245d14e42f376398572.jpg?1632321263","https://shikimori.one/system/screenshots/original/9da3c621684b4c798bb2d823ade6a60fab303d50.jpg?1632321264","https://shikimori.one/system/screenshots/original/ee81498f85691ed63366edf5d0687c6d71196f96.jpg?1632321264","https://shikimori.one/system/screenshots/original/b42fb42d167cfc2efed757c05be27ba9d65a1453.jpg?1632321264"],
     episodes: 12, voiceovers: ['AniLibria.TV'], videoSrc: ''
-  }
-,
+  },
   {
     id: 33, title: 'Провожающая в последний путь Фрирен', rating: 9.3, rank: 33, type: 'Сериалы',
     shikimori_id: '52991',
@@ -273,5 +321,406 @@ export const animeData: Anime[] = [
     plot: longPlot('[character=144337]Эмма[/character], [character=144916]Норман[/character] и [character=144919]Рей[/character] — самые яркие дети в приюте «Благодатный дом».', 'И под покровительством женщины, которую они называют «мамой», все дети наслаждаются комфортной жизнью.'),
     screenshots: ["https://shikimori.one/system/screenshots/original/c904395bf53bf8f0c6e5662e37f1824b6ce68813.png?1547147120","https://shikimori.one/system/screenshots/original/a962e167ec6a9e75925fc6d910f1b42e7f02d417.png?1547147122","https://shikimori.one/system/screenshots/original/32226caeb0eed11635f22c81b7db31d5c62bb8f5.png?1547147123","https://shikimori.one/system/screenshots/original/f468f1766269e8fa0944b2dc4dd0760c64cf8d7b.png?1547147125"],
     episodes: 12, voiceovers: ['AniLibria.TV'], videoSrc: ''
+  }
+,
+  {
+    id: 44, title: 'Код Гиас: Восставший Лелуш', rating: 8.7, rank: 44, type: 'Сериалы',
+    shikimori_id: '1575',
+    img: 'https://shikimori.one/system/animes/original/1575.jpg',
+    plot: longPlot('Код Гиас: Восставший Лелуш добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 25, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 45, title: 'Ковбой Бибоп', rating: 8.8, rank: 45, type: 'Сериалы',
+    shikimori_id: '1',
+    img: 'https://shikimori.one/system/animes/original/1.jpg',
+    plot: longPlot('Ковбой Бибоп добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 26, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 46, title: 'Берсерк', rating: 8.6, rank: 46, type: 'Сериалы',
+    shikimori_id: '33',
+    img: 'https://shikimori.one/system/animes/original/33.jpg',
+    plot: longPlot('Берсерк добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 25, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 47, title: 'Самурай Чамплу', rating: 8.5, rank: 47, type: 'Сериалы',
+    shikimori_id: '205',
+    img: 'https://shikimori.one/system/animes/original/205.jpg',
+    plot: longPlot('Самурай Чамплу добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 26, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 48, title: 'Гуррен-Лаганн', rating: 8.6, rank: 48, type: 'Сериалы',
+    shikimori_id: '2001',
+    img: 'https://shikimori.one/system/animes/original/2001.jpg',
+    plot: longPlot('Гуррен-Лаганн добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 27, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 49, title: 'Паразит: Учение о жизни', rating: 8.4, rank: 49, type: 'Сериалы',
+    shikimori_id: '22535',
+    img: 'https://shikimori.one/system/animes/original/22535.jpg',
+    plot: longPlot('Паразит: Учение о жизни добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 24, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 50, title: 'Токийский гуль', rating: 7.8, rank: 50, type: 'Сериалы',
+    shikimori_id: '22319',
+    img: 'https://shikimori.one/system/animes/original/22319.jpg',
+    plot: longPlot('Токийский гуль добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 12, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 51, title: 'Очень приятно, Бог', rating: 8, rank: 51, type: 'Сериалы',
+    shikimori_id: '14713',
+    img: 'https://shikimori.one/system/animes/original/14713.jpg',
+    plot: longPlot('Очень приятно, Бог добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 13, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 52, title: 'Бездомный бог: Арагото', rating: 8.2, rank: 52, type: 'Сериалы',
+    shikimori_id: '30503',
+    img: 'https://shikimori.one/system/animes/original/30503.jpg',
+    plot: longPlot('Бездомный бог: Арагото добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 13, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 55, title: 'Моб Психо 100 II', rating: 8.8, rank: 55, type: 'Сериалы',
+    shikimori_id: '37510',
+    img: 'https://shikimori.one/system/animes/original/37510.jpg',
+    plot: longPlot('Моб Психо 100 II добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 13, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 56, title: 'Доктор Стоун', rating: 8.3, rank: 56, type: 'Сериалы',
+    shikimori_id: '38691',
+    img: 'https://shikimori.one/system/animes/original/38691.jpg',
+    plot: longPlot('Доктор Стоун добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 24, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 57, title: 'Доктор Стоун: Новый мир', rating: 8.3, rank: 57, type: 'Сериалы',
+    shikimori_id: '48549',
+    img: 'https://shikimori.one/system/animes/original/48549.jpg',
+    plot: longPlot('Доктор Стоун: Новый мир добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 11, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 58, title: 'Класс убийц', rating: 8.1, rank: 58, type: 'Сериалы',
+    shikimori_id: '24833',
+    img: 'https://shikimori.one/system/animes/original/24833.jpg',
+    plot: longPlot('Класс убийц добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 22, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 59, title: 'Класс убийц 2', rating: 8.5, rank: 59, type: 'Сериалы',
+    shikimori_id: '30654',
+    img: 'https://shikimori.one/system/animes/original/30654.jpg',
+    plot: longPlot('Класс убийц 2 добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 25, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 60, title: 'Сага о Винланде', rating: 8.8, rank: 60, type: 'Сериалы',
+    shikimori_id: '37521',
+    img: 'https://shikimori.one/system/animes/original/37521.jpg',
+    plot: longPlot('Сага о Винланде добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 24, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 61, title: 'Сага о Винланде 2', rating: 8.8, rank: 61, type: 'Сериалы',
+    shikimori_id: '49387',
+    img: 'https://shikimori.one/system/animes/original/49387.jpg',
+    plot: longPlot('Сага о Винланде 2 добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 24, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 62, title: 'Восемьдесят шесть', rating: 8.3, rank: 62, type: 'Сериалы',
+    shikimori_id: '41457',
+    img: 'https://shikimori.one/system/animes/original/41457.jpg',
+    plot: longPlot('Восемьдесят шесть добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 11, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 63, title: 'Восемьдесят шесть 2', rating: 8.7, rank: 63, type: 'Сериалы',
+    shikimori_id: '48569',
+    img: 'https://shikimori.one/system/animes/original/48569.jpg',
+    plot: longPlot('Восемьдесят шесть 2 добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 12, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 64, title: 'Дороро', rating: 8.2, rank: 64, type: 'Сериалы',
+    shikimori_id: '37520',
+    img: 'https://shikimori.one/system/animes/original/37520.jpg',
+    plot: longPlot('Дороро добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 24, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 65, title: 'Созданный в Бездне', rating: 8.7, rank: 65, type: 'Сериалы',
+    shikimori_id: '34599',
+    img: 'https://shikimori.one/system/animes/original/34599.jpg',
+    plot: longPlot('Созданный в Бездне добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 13, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 66, title: 'Созданный в Бездне: Золотой город палящего солнца', rating: 8.6, rank: 66, type: 'Сериалы',
+    shikimori_id: '41084',
+    img: 'https://shikimori.one/system/animes/original/41084.jpg',
+    plot: longPlot('Созданный в Бездне: Золотой город палящего солнца добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 12, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 67, title: 'Стальной алхимик', rating: 8.1, rank: 67, type: 'Сериалы',
+    shikimori_id: '121',
+    img: 'https://shikimori.one/system/animes/original/121.jpg',
+    plot: longPlot('Стальной алхимик добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 51, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 68, title: 'Хантер x Хантер', rating: 9, rank: 68, type: 'Сериалы',
+    shikimori_id: '11061',
+    img: 'https://shikimori.one/system/animes/original/11061.jpg',
+    plot: longPlot('Хантер x Хантер добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 148, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 69, title: 'Великий из бродячих псов', rating: 7.8, rank: 69, type: 'Сериалы',
+    shikimori_id: '31478',
+    img: 'https://shikimori.one/system/animes/original/31478.jpg',
+    plot: longPlot('Великий из бродячих псов добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 12, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 70, title: 'Великий из бродячих псов 2', rating: 8.2, rank: 70, type: 'Сериалы',
+    shikimori_id: '32867',
+    img: 'https://shikimori.one/system/animes/original/32867.jpg',
+    plot: longPlot('Великий из бродячих псов 2 добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 12, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 71, title: 'Чёрный клевер', rating: 8.1, rank: 71, type: 'Сериалы',
+    shikimori_id: '34572',
+    img: 'https://shikimori.one/system/animes/original/34572.jpg',
+    plot: longPlot('Чёрный клевер добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 170, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 72, title: 'Семь смертных грехов', rating: 7.7, rank: 72, type: 'Сериалы',
+    shikimori_id: '23755',
+    img: 'https://shikimori.one/system/animes/original/23755.jpg',
+    plot: longPlot('Семь смертных грехов добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 24, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 73, title: 'Семь смертных грехов: Возрождение заповедей', rating: 7.6, rank: 73, type: 'Сериалы',
+    shikimori_id: '34577',
+    img: 'https://shikimori.one/system/animes/original/34577.jpg',
+    plot: longPlot('Семь смертных грехов: Возрождение заповедей добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 24, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 74, title: 'Врата Штейна 0', rating: 8.5, rank: 74, type: 'Сериалы',
+    shikimori_id: '30484',
+    img: 'https://shikimori.one/system/animes/original/30484.jpg',
+    plot: longPlot('Врата Штейна 0 добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 23, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 75, title: 'О моём перерождении в слизь', rating: 8.1, rank: 75, type: 'Сериалы',
+    shikimori_id: '37430',
+    img: 'https://shikimori.one/system/animes/original/37430.jpg',
+    plot: longPlot('О моём перерождении в слизь добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 24, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 76, title: 'О моём перерождении в слизь 2', rating: 8.3, rank: 76, type: 'Сериалы',
+    shikimori_id: '39551',
+    img: 'https://shikimori.one/system/animes/original/39551.jpg',
+    plot: longPlot('О моём перерождении в слизь 2 добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 12, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 77, title: 'Дневник будущего', rating: 7.4, rank: 77, type: 'Сериалы',
+    shikimori_id: '10620',
+    img: 'https://shikimori.one/system/animes/original/10620.jpg',
+    plot: longPlot('Дневник будущего добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 26, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 78, title: 'Иная', rating: 7.5, rank: 78, type: 'Сериалы',
+    shikimori_id: '11111',
+    img: 'https://shikimori.one/system/animes/original/11111.jpg',
+    plot: longPlot('Иная добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 12, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 79, title: 'Эрго Прокси', rating: 7.9, rank: 79, type: 'Сериалы',
+    shikimori_id: '790',
+    img: 'https://shikimori.one/system/animes/original/790.jpg',
+    plot: longPlot('Эрго Прокси добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 23, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 80, title: 'Психопаспорт', rating: 8.3, rank: 80, type: 'Сериалы',
+    shikimori_id: '13601',
+    img: 'https://shikimori.one/system/animes/original/13601.jpg',
+    plot: longPlot('Психопаспорт добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 22, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 81, title: 'Психопаспорт 2', rating: 7.4, rank: 81, type: 'Сериалы',
+    shikimori_id: '23281',
+    img: 'https://shikimori.one/system/animes/original/23281.jpg',
+    plot: longPlot('Психопаспорт 2 добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 11, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 82, title: 'Тетрадь дружбы Нацумэ 2', rating: 8.5, rank: 82, type: 'Сериалы',
+    shikimori_id: '5300',
+    img: 'https://shikimori.one/system/animes/original/5300.jpg',
+    plot: longPlot('Тетрадь дружбы Нацумэ 2 добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 13, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 83, title: 'Торадора!', rating: 8.1, rank: 83, type: 'Сериалы',
+    shikimori_id: '4224',
+    img: 'https://shikimori.one/system/animes/original/4224.jpg',
+    plot: longPlot('Торадора! добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 25, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 84, title: 'Ангельские ритмы!', rating: 8, rank: 84, type: 'Сериалы',
+    shikimori_id: '6547',
+    img: 'https://shikimori.one/system/animes/original/6547.jpg',
+    plot: longPlot('Ангельские ритмы! добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 13, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 85, title: 'Кланнад', rating: 8, rank: 85, type: 'Сериалы',
+    shikimori_id: '2167',
+    img: 'https://shikimori.one/system/animes/original/2167.jpg',
+    plot: longPlot('Кланнад добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 23, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 86, title: 'Кланнад: Продолжение истории', rating: 8.9, rank: 86, type: 'Сериалы',
+    shikimori_id: '4181',
+    img: 'https://shikimori.one/system/animes/original/4181.jpg',
+    plot: longPlot('Кланнад: Продолжение истории добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 24, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 87, title: 'Меланхолия Харухи Судзумии', rating: 7.8, rank: 87, type: 'Сериалы',
+    shikimori_id: '849',
+    img: 'https://shikimori.one/system/animes/original/849.jpg',
+    plot: longPlot('Меланхолия Харухи Судзумии добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 14, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 88, title: 'Монолог фармацевта', rating: 8.7, rank: 88, type: 'Сериалы',
+    shikimori_id: '54492',
+    img: 'https://shikimori.one/system/animes/original/54492.jpg',
+    plot: longPlot('Монолог фармацевта добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 24, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 89, title: 'Опасность в моём сердце', rating: 8.2, rank: 89, type: 'Сериалы',
+    shikimori_id: '52578',
+    img: 'https://shikimori.one/system/animes/original/52578.jpg',
+    plot: longPlot('Опасность в моём сердце добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 12, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 90, title: 'Опасность в моём сердце 2', rating: 8.8, rank: 90, type: 'Сериалы',
+    shikimori_id: '55690',
+    img: 'https://shikimori.one/system/animes/original/55690.jpg',
+    plot: longPlot('Опасность в моём сердце 2 добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 13, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 91, title: 'Адский рай', rating: 8.1, rank: 91, type: 'Сериалы',
+    shikimori_id: '46569',
+    img: 'https://shikimori.one/system/animes/original/46569.jpg',
+    plot: longPlot('Адский рай добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 13, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 92, title: 'Синяя тюрьма 2', rating: 7, rank: 92, type: 'Сериалы',
+    shikimori_id: '54865',
+    img: 'https://shikimori.one/system/animes/original/54865.jpg',
+    plot: longPlot('Синяя тюрьма 2 добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 14, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 93, title: 'Дандадан', rating: 8.5, rank: 93, type: 'Сериалы',
+    shikimori_id: '57334',
+    img: 'https://shikimori.one/system/animes/original/57334.jpg',
+    plot: longPlot('Дандадан добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 12, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 94, title: 'Хоримия', rating: 8.2, rank: 94, type: 'Сериалы',
+    shikimori_id: '42897',
+    img: 'https://shikimori.one/system/animes/original/42897.jpg',
+    plot: longPlot('Хоримия добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 13, voiceovers: [], videoSrc: ''
+  },
+  {
+    id: 95, title: 'Башня Бога', rating: 7.6, rank: 95, type: 'Сериалы',
+    shikimori_id: '40221',
+    img: 'https://shikimori.one/system/animes/original/40221.jpg',
+    plot: longPlot('Башня Бога добавлено в расширенный каталог Jvante.', 'Доступность озвучек и серий проверяется через AniLibria и AnimeVost перед показом в списке.'),
+    screenshots: [],
+    episodes: 13, voiceovers: [], videoSrc: ''
   }
 ];
