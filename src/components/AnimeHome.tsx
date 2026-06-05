@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Search, Grid, List, PlaySquare, TrendingUp, Star, Eye, ChevronRight, LayoutGrid, MonitorPlay, Film, Tv, Clock, Languages } from 'lucide-react';
+import { ArrowLeft, Search, Grid, List, PlaySquare, TrendingUp, Star, Eye, ChevronRight, LayoutGrid, MonitorPlay, Film, Tv, Clock, Languages, ExternalLink } from 'lucide-react';
 import logoSrc from '../assets/images/jvante_logo_1780506650738.png';
 import { animeData, Anime } from '../data/animeData';
+import { HlsPlayer } from './HlsPlayer';
 
 interface AnimeHomeProps {
   onBack: () => void;
@@ -23,29 +24,52 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
   const [kodikUrl, setKodikUrl] = useState<string | null>(null);
   const [kodikLoading, setKodikLoading] = useState(false);
   const [kodikError, setKodikError] = useState<string | null>(null);
+  const [showPlayerFallback, setShowPlayerFallback] = useState(false);
 
   React.useEffect(() => {
     setIsPlaying(false);
     setKodikUrl(null);
     setKodikError(null);
+    setShowPlayerFallback(false);
   }, [selectedAnime, selectedEpisode, selectedVoice]);
 
-  // Removed broken Shikimori fetch to use stable IMDb/static screenshots
+  React.useEffect(() => {
+    if (!kodikUrl) return;
+    setShowPlayerFallback(false);
+    const timer = window.setTimeout(() => setShowPlayerFallback(true), 4500);
+    return () => window.clearTimeout(timer);
+  }, [kodikUrl]);
+
   const fetchKodikPlayer = async (anime: Anime | null) => {
     if (!anime) return;
     setKodikLoading(true);
     setKodikError(null);
     setKodikUrl(null);
-    
-    // Using direct player URL which works in an Iframe instead of making blocked API requests
-    // Using player.smotret-anime.com or kodik.info as a fallback player router
-    setTimeout(() => {
-      // Adding a direct player iframe source. 
-      // Another alternative: `https://kodik.info/find-player?shikimoriID=${anime.shikimori_id}`
-      setKodikUrl(`https://kodik.info/find-player?shikimoriID=${anime.shikimori_id}&episode=${selectedEpisode}`);
+
+    try {
+      const params = new URLSearchParams({
+        shikimoriId: anime.shikimori_id,
+        episode: String(selectedEpisode),
+        title: anime.title,
+      });
+      if (selectedVoice) {
+        params.set('voice', selectedVoice);
+      }
+      const response = await fetch(`/api/anime-player?${params.toString()}`);
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok || !data.url) {
+        throw new Error(data.error || 'Плеер для этой серии сейчас недоступен.');
+      }
+
+      setKodikUrl(data.url);
       setIsPlaying(true);
+    } catch (error: any) {
+      setKodikError(error.message || 'Не удалось загрузить плеер.');
+      setIsPlaying(false);
+    } finally {
       setKodikLoading(false);
-    }, 500);
+    }
   };
 
   const scrollToPlayer = () => {
@@ -354,12 +378,15 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                              </div>
                            </>
                          ) : kodikUrl ? (
-                           kodikUrl.endsWith('.mp4') ? (
-                             <video 
-                               src={kodikUrl} 
-                               controls 
-                               autoPlay 
-                               className="w-full h-full outline-none"
+                           /\.m3u8(\?|$)/i.test(kodikUrl) ? (
+                             <HlsPlayer src={kodikUrl} />
+                           ) : /\.mp4(\?|$)/i.test(kodikUrl) ? (
+                             <video
+                               src={kodikUrl}
+                               controls
+                               autoPlay
+                               playsInline
+                               className="w-full h-full bg-black outline-none"
                              />
                            ) : (
                              <iframe
@@ -367,12 +394,34 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                                className="w-full h-full border-0"
                                allowFullScreen
                                allow="autoplay; fullscreen"
+                               referrerPolicy="no-referrer"
                                title={selectedAnime.title}
                              />
                            )
                          ) : (
                            <div className="w-full h-full flex items-center justify-center text-zinc-500">
                              Загрузка плеера...
+                           </div>
+                         )}
+                         {isPlaying && kodikUrl && showPlayerFallback && (
+                           <div className="absolute inset-x-4 bottom-4 z-20 rounded-2xl border border-blue-500/30 bg-[#0A0C10]/90 p-4 backdrop-blur-xl shadow-2xl">
+                             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                               <div>
+                                 <div className="text-sm font-bold text-white">Если встроенный плеер не открылся</div>
+                                 <div className="text-xs text-zinc-400 mt-1">Источник может блокировать iframe на localhost. Откройте плеер в новой вкладке.</div>
+                               </div>
+                               <div className="flex flex-wrap gap-2">
+                                 <a
+                                   href={kodikUrl}
+                                   target="_blank"
+                                   rel="noreferrer"
+                                   className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-600/20 px-3 py-2 text-xs font-bold text-blue-200 hover:bg-blue-600/30"
+                                 >
+                                   <ExternalLink className="w-3.5 h-3.5" />
+                                   Открыть плеер
+                                 </a>
+                               </div>
+                             </div>
                            </div>
                          )}
                       </div>
@@ -403,4 +452,3 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
     </div>
   );
 }
-

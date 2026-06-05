@@ -60,6 +60,34 @@ export function Player({
     console.log('ReactPlayer object:', ReactPlayer);
   }, []);
 
+  const getPlayerTime = () => {
+    const player = playerRef.current;
+    if (!player) return null;
+    if (typeof player.getCurrentTime === 'function') return player.getCurrentTime();
+    if (Number.isFinite(player.currentTime)) return player.currentTime;
+    return null;
+  };
+
+  const getPlayerDuration = () => {
+    const player = playerRef.current;
+    if (!player) return null;
+    if (typeof player.getDuration === 'function') return player.getDuration();
+    if (Number.isFinite(player.duration)) return player.duration;
+    return null;
+  };
+
+  const seekPlayerTo = (timestamp: number) => {
+    const player = playerRef.current;
+    if (!player) return;
+    if (typeof player.seekTo === 'function') {
+      player.seekTo(timestamp, 'seconds');
+      return;
+    }
+    if ('currentTime' in player) {
+      player.currentTime = timestamp;
+    }
+  };
+
   const isRutube = roomState.videoUrl?.includes('rutube.ru');
   const isVK = roomState.videoUrl?.includes('vk.com/video');
   const isCustomPlayer = isRutube || isVK;
@@ -67,7 +95,7 @@ export function Player({
   // Sync with server state
   useEffect(() => {
     if (!isCustomPlayer && playerRef.current && roomState.videoUrl) {
-      const currentClientTime = typeof playerRef.current.getCurrentTime === 'function' ? playerRef.current.getCurrentTime() : 0;
+      const currentClientTime = getPlayerTime() ?? 0;
       const expectedTime = roomState.isPlaying 
         ? roomState.timestamp + (Date.now() - roomState.lastUpdateAt) / 1000 
         : roomState.timestamp;
@@ -76,9 +104,7 @@ export function Player({
       
       // Keep viewers tightly synced. The creator is allowed to scrub freely.
       if (!isCreator && diff > 1.25) {
-        if (typeof playerRef.current.seekTo === 'function') {
-           playerRef.current.seekTo(expectedTime, 'seconds');
-        }
+        seekPlayerTo(expectedTime);
       }
     }
   }, [roomState.timestamp, roomState.isPlaying, roomState.lastUpdateAt, roomState.videoUrl, isCreator, isCustomPlayer]);
@@ -96,14 +122,13 @@ export function Player({
   // Report progress loop for the current user
   useEffect(() => {
     const interval = setInterval(() => {
-      if (!isCustomPlayer && playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-        const time = playerRef.current.getCurrentTime();
+      if (!isCustomPlayer && playerRef.current) {
+        const time = getPlayerTime();
+        if (time === null) return;
         onReportProgress(time);
         if (!isDraggingSeek) setCurrentTime(time);
-        if (typeof playerRef.current.getDuration === 'function') {
-          const nextDuration = playerRef.current.getDuration();
-          if (Number.isFinite(nextDuration) && nextDuration > 0) setDuration(nextDuration);
-        }
+        const nextDuration = getPlayerDuration();
+        if (nextDuration !== null && Number.isFinite(nextDuration) && nextDuration > 0) setDuration(nextDuration);
       }
     }, 1000);
     return () => clearInterval(interval);
@@ -122,20 +147,20 @@ export function Player({
   };
 
   const handlePlay = () => {
-    if (isCreator && playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-      onPlayStateChange(true, playerRef.current.getCurrentTime());
+    if (isCreator) {
+      onPlayStateChange(true, getCurrentTime());
     }
   };
 
   const handlePause = () => {
-    if (isCreator && playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-      onPlayStateChange(false, playerRef.current.getCurrentTime());
+    if (isCreator) {
+      onPlayStateChange(false, getCurrentTime());
     }
   };
 
   const handleSeek = (e: any) => {
-    if (isCreator && playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-      onSeek(playerRef.current.getCurrentTime());
+    if (isCreator) {
+      onSeek(getCurrentTime());
     }
   };
 
@@ -143,18 +168,15 @@ export function Player({
     if (!isCreator) return;
     const nextTime = Math.max(0, Math.min(timestamp, duration || timestamp));
     setCurrentTime(nextTime);
-    if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
-      playerRef.current.seekTo(nextTime, 'seconds');
-    }
+    seekPlayerTo(nextTime);
     if (shouldBroadcast) {
       onSeek(nextTime);
     }
   };
 
   const getCurrentTime = () => {
-    if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
-      return playerRef.current.getCurrentTime();
-    }
+    const playerTime = getPlayerTime();
+    if (playerTime !== null) return playerTime;
 
     return roomState.isPlaying
       ? roomState.timestamp + (Date.now() - roomState.lastUpdateAt) / 1000
@@ -231,7 +253,7 @@ export function Player({
           <div className="absolute inset-0 w-full h-full text-white">
             <PlayerComponent
               ref={playerRef}
-              url={roomState.videoUrl}
+              src={roomState.videoUrl}
               width="100%"
               height="100%"
               playing={roomState.isPlaying}
@@ -240,14 +262,13 @@ export function Player({
               onPause={handlePause}
               onSeeked={isCreator ? handleSeek : undefined}
               onDurationChange={() => {
-                if (playerRef.current && typeof playerRef.current.getDuration === 'function') {
-                  const nextDuration = playerRef.current.getDuration();
-                  if (Number.isFinite(nextDuration) && nextDuration > 0) setDuration(nextDuration);
-                }
+                const nextDuration = getPlayerDuration();
+                if (nextDuration !== null && Number.isFinite(nextDuration) && nextDuration > 0) setDuration(nextDuration);
               }}
               onTimeUpdate={() => {
-                if (!playerRef.current || typeof playerRef.current.getCurrentTime !== 'function' || isDraggingSeek) return;
-                setCurrentTime(playerRef.current.getCurrentTime());
+                if (!playerRef.current || isDraggingSeek) return;
+                const time = getPlayerTime();
+                if (time !== null) setCurrentTime(time);
               }}
               style={{ pointerEvents: isCreator ? 'auto' : 'none' }} // Revert: viewers cannot pause it manually by clicking
               config={({

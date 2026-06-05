@@ -18,7 +18,10 @@ export default function App() {
 
   const [isPublicRoom, setIsPublicRoom] = useState(true);
   const [invites, setInvites] = useState<any[]>([]);
-  const [view, setView] = useState<'lobby' | 'room' | 'anime'>('lobby');
+  const [view, setView] = useState<'lobby' | 'room' | 'anime'>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('view') === 'anime' ? 'anime' : 'lobby';
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {

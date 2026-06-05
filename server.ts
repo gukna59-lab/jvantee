@@ -78,6 +78,264 @@ async function startServer() {
     res.json(Array.from(onlineUids));
   });
 
+  type KodikEpisode = string | {
+    link?: unknown;
+    url?: unknown;
+    src?: unknown;
+  };
+
+  type KodikSeason = {
+    link?: unknown;
+    episodes?: Record<string, KodikEpisode>;
+  };
+
+  type KodikResult = {
+    link?: unknown;
+    url?: unknown;
+    src?: unknown;
+    seasons?: Record<string, KodikSeason>;
+    translation?: {
+      title?: unknown;
+    };
+  };
+
+  type AniLibriaRelease = {
+    id?: unknown;
+    external_player?: unknown;
+    name?: {
+      main?: unknown;
+      english?: unknown;
+      alternative?: unknown;
+    };
+  };
+
+  type AniLibriaEpisode = {
+    ordinal?: unknown;
+    sort_order?: unknown;
+    hls_480?: unknown;
+    hls_720?: unknown;
+    hls_1080?: unknown;
+  };
+
+  const normalizeKodikUrl = (value: unknown): string | null => {
+    if (typeof value !== 'string') return null;
+    const url = value.trim();
+    if (!url) return null;
+    if (url.startsWith('//')) return `https:${url}`;
+    if (url.startsWith('/')) return `https://kodik.info${url}`;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return null;
+  };
+
+  const getEpisodeUrl = (episodeData: KodikEpisode | undefined): string | null => {
+    if (!episodeData) return null;
+    if (typeof episodeData === 'string') return normalizeKodikUrl(episodeData);
+    return normalizeKodikUrl(episodeData.link) || normalizeKodikUrl(episodeData.url) || normalizeKodikUrl(episodeData.src);
+  };
+
+  const findPlayerUrl = (result: KodikResult, episode: string): string | null => {
+    const seasons = result.seasons && typeof result.seasons === 'object' ? result.seasons : null;
+
+    if (seasons) {
+      for (const season of Object.values(seasons)) {
+        const episodes = season?.episodes && typeof season.episodes === 'object' ? season.episodes : null;
+        const episodeUrl = episodes ? getEpisodeUrl(episodes[episode]) : null;
+        if (episodeUrl) return episodeUrl;
+      }
+
+      if (episode === '1') {
+        for (const season of Object.values(seasons)) {
+          const seasonUrl = normalizeKodikUrl(season?.link);
+          if (seasonUrl) return seasonUrl;
+        }
+      }
+    }
+
+    return normalizeKodikUrl(result.link) || normalizeKodikUrl(result.url) || normalizeKodikUrl(result.src);
+  };
+
+  const normalizeExternalUrl = (value: unknown): string | null => {
+    if (typeof value !== 'string') return null;
+    const url = value.trim();
+    if (!url) return null;
+    if (url.startsWith('//')) return `https:${url}`;
+    if (url.startsWith('/')) return `https://anilibria.top${url}`;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    return null;
+  };
+
+  const simplifyTitle = (value: unknown) => {
+    return typeof value === 'string'
+      ? value.toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/gi, ' ').trim()
+      : '';
+  };
+
+  const getAniLibriaScore = (release: AniLibriaRelease, title: string) => {
+    const query = simplifyTitle(title);
+    if (!query) return 0;
+
+    const names = [
+      simplifyTitle(release.name?.main),
+      simplifyTitle(release.name?.english),
+      simplifyTitle(release.name?.alternative),
+    ].filter(Boolean);
+
+    if (names.some(name => name === query)) return 100;
+    if (names.some(name => name.includes(query) || query.includes(name))) return 70;
+
+    const queryWords = new Set(query.split(' ').filter(word => word.length > 2));
+    if (!queryWords.size) return 0;
+    const bestOverlap = Math.max(...names.map(name => {
+      const nameWords = new Set(name.split(' ').filter(word => word.length > 2));
+      return Array.from(queryWords).filter(word => nameWords.has(word)).length / queryWords.size;
+    }), 0);
+
+    return bestOverlap >= 0.75 ? 50 : 0;
+  };
+
+  const fetchAniLibriaPlayer = async (title: string, episode: string) => {
+    if (!title) return null;
+
+    const searchUrl = new URL('https://anilibria.top/api/v1/app/search/releases');
+    searchUrl.searchParams.set('query', title);
+
+    const searchResponse = await fetch(searchUrl, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Jvante anime player',
+      },
+    });
+
+    if (!searchResponse.ok) return null;
+
+    const releases = await searchResponse.json();
+    if (!Array.isArray(releases)) return null;
+
+    const scoredReleases = (releases as AniLibriaRelease[])
+      .map(release => ({ release, score: getAniLibriaScore(release, title) }))
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    const match = scoredReleases[0]?.release;
+    const releaseId = typeof match?.id === 'number' || typeof match?.id === 'string' ? String(match.id) : '';
+    if (!match || !releaseId) return null;
+
+    const releaseUrl = new URL(`https://anilibria.top/api/v1/anime/releases/${encodeURIComponent(releaseId)}`);
+    releaseUrl.searchParams.set('include', 'episodes');
+
+    const releaseResponse = await fetch(releaseUrl, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Jvante anime player',
+      },
+    });
+
+    if (releaseResponse.ok) {
+      const releaseData = await releaseResponse.json();
+      const episodes = Array.isArray(releaseData?.episodes) ? releaseData.episodes as AniLibriaEpisode[] : [];
+      const episodeNumber = Number(episode);
+      const selectedEpisode = episodes.find(item => Number(item.ordinal) === episodeNumber)
+        || episodes.find(item => Number(item.sort_order) === episodeNumber)
+        || (episodeNumber === 1 ? episodes[0] : null);
+      const hlsUrl = normalizeExternalUrl(selectedEpisode?.hls_1080)
+        || normalizeExternalUrl(selectedEpisode?.hls_720)
+        || normalizeExternalUrl(selectedEpisode?.hls_480);
+
+      if (hlsUrl) {
+        return {
+          url: hlsUrl,
+          provider: 'anilibria',
+          releaseId,
+        };
+      }
+    }
+
+    const externalUrl = normalizeExternalUrl(match.external_player);
+    return externalUrl ? { url: externalUrl, provider: 'anilibria', releaseId } : null;
+  };
+
+  app.get('/api/anime-player', async (req, res) => {
+    const shikimoriId = typeof req.query.shikimoriId === 'string' ? req.query.shikimoriId.trim() : '';
+    const episode = typeof req.query.episode === 'string' ? req.query.episode.trim() : '1';
+    const voice = typeof req.query.voice === 'string' ? req.query.voice.trim().toLowerCase() : '';
+    const title = typeof req.query.title === 'string' ? req.query.title.trim() : '';
+    const token = process.env.KODIK_API_TOKEN;
+    let aniLibriaPlayer: Awaited<ReturnType<typeof fetchAniLibriaPlayer>> = null;
+
+    if (!/^\d+$/.test(shikimoriId) || !/^\d+$/.test(episode)) {
+      res.status(400).json({ error: 'Некорректный ID аниме или серии.' });
+      return;
+    }
+
+    try {
+      aniLibriaPlayer = await fetchAniLibriaPlayer(title, episode);
+    } catch (error) {
+      console.warn('AniLibria player lookup failed:', error);
+    }
+
+    if (aniLibriaPlayer) {
+      res.json(aniLibriaPlayer);
+      return;
+    }
+
+    if (!token) {
+      res.status(503).json({
+        error: 'Источник аниме-плеера не настроен. Добавьте KODIK_API_TOKEN или подключите другой легальный embed/API-провайдер.',
+      });
+      return;
+    }
+
+    try {
+      const body = new URLSearchParams({
+        token,
+        shikimori_id: shikimoriId,
+        types: 'anime,anime-serial',
+        with_episodes: 'true',
+        limit: '20',
+      });
+
+      const response = await fetch('https://kodik-api.com/search', {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'User-Agent': 'Jvante anime player',
+        },
+        body,
+      });
+
+      if (!response.ok) {
+        res.status(502).json({ error: `Провайдер плеера ответил ${response.status}.` });
+        return;
+      }
+
+      const data = await response.json();
+      const results = Array.isArray(data?.results) ? data.results as KodikResult[] : [];
+      const sortedResults = voice
+        ? [
+          ...results.filter(result => {
+            const title = typeof result.translation?.title === 'string' ? result.translation.title.toLowerCase() : '';
+            return title.includes(voice) || voice.includes(title);
+          }),
+          ...results.filter(result => {
+            const title = typeof result.translation?.title === 'string' ? result.translation.title.toLowerCase() : '';
+            return !(title.includes(voice) || voice.includes(title));
+          }),
+        ]
+        : results;
+      const playerUrl = sortedResults.map(result => findPlayerUrl(result, episode)).find(Boolean);
+
+      if (!playerUrl) {
+        res.status(404).json({ error: 'Провайдер не вернул ссылку на плеер для этой серии.' });
+        return;
+      }
+
+      res.json({ url: playerUrl, provider: 'kodik' });
+    } catch (error) {
+      res.status(502).json({ error: 'Не удалось получить ссылку на аниме-плеер.' });
+    }
+  });
+
   const canControlPlayback = (room: Room, socketId: string, uid?: string) => {
     return room.creatorId === socketId || (!!room.creatorUid && room.creatorUid === uid);
   };
