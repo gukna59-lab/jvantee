@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Search, Grid, List, PlaySquare, TrendingUp, Star, Eye, ChevronRight, LayoutGrid, MonitorPlay, Film, Tv, Clock, Languages } from 'lucide-react';
+import { ArrowLeft, Search, Grid, List, PlaySquare, TrendingUp, Star, Eye, ChevronRight, LayoutGrid, MonitorPlay, Film, Tv, Clock, Languages, ExternalLink } from 'lucide-react';
 import logoSrc from '../assets/images/jvante_logo.svg';
 import { animeData, Anime } from '../data/animeData';
-import { CustomPlayer } from './CustomPlayer';
+import { HlsPlayer } from './HlsPlayer';
 
 interface AnimeHomeProps {
   onBack: () => void;
@@ -31,16 +31,16 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
   const [kodikUrl, setKodikUrl] = useState<string | null>(null);
   const [kodikLoading, setKodikLoading] = useState(false);
   const [kodikError, setKodikError] = useState<string | null>(null);
+  const [showPlayerFallback, setShowPlayerFallback] = useState(false);
   const [sourceOptions, setSourceOptions] = useState<AnimeSource[]>([]);
   const [sourceLoading, setSourceLoading] = useState(false);
   const [selectedQuality, setSelectedQuality] = useState('');
-  const [catalogSources, setCatalogSources] = useState<Record<number, AnimeSource[]>>({});
-  const [catalogLoading, setCatalogLoading] = useState(true);
 
   React.useEffect(() => {
     setIsPlaying(false);
     setKodikUrl(null);
     setKodikError(null);
+    setShowPlayerFallback(false);
   }, [selectedAnime, selectedEpisode, selectedVoice, selectedQuality]);
 
   const selectedSource = sourceOptions.find(source => source.voice === selectedVoice);
@@ -48,43 +48,6 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
     ? selectedSource.episodes
     : Array.from({ length: selectedAnime?.episodes || 0 }, (_, index) => index + 1);
   const availableQualities = selectedSource?.qualities || [];
-  const getEpisodeRating = (episode: number) => selectedAnime?.episodeRatings?.[episode] || '—';
-
-  React.useEffect(() => {
-    let cancelled = false;
-
-    const loadCatalogSources = async () => {
-      setCatalogLoading(true);
-
-      for (let index = 0; index < animeData.length; index += 4) {
-        const batch = animeData.slice(index, index + 4);
-        const results = await Promise.all(batch.map(async (anime) => {
-          try {
-            const params = new URLSearchParams({
-              title: anime.title,
-              episodes: String(anime.episodes),
-            });
-            const response = await fetch(`/api/anime-sources?${params.toString()}`);
-            const data = await response.json();
-            const sources = Array.isArray(data.sources) ? data.sources as AnimeSource[] : [];
-            return [anime.id, sources] as const;
-          } catch {
-            return [anime.id, []] as const;
-          }
-        }));
-
-        if (cancelled) return;
-        setCatalogSources(prev => ({ ...prev, ...Object.fromEntries(results) }));
-      }
-
-      if (!cancelled) setCatalogLoading(false);
-    };
-
-    loadCatalogSources();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   React.useEffect(() => {
     if (!selectedAnime) {
@@ -141,6 +104,13 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
     }
   }, [selectedSource, selectedEpisode, selectedQuality]);
 
+  React.useEffect(() => {
+    if (!kodikUrl) return;
+    setShowPlayerFallback(false);
+    const timer = window.setTimeout(() => setShowPlayerFallback(true), 4500);
+    return () => window.clearTimeout(timer);
+  }, [kodikUrl]);
+
   const fetchKodikPlayer = async (anime: Anime | null, qualityOverride = selectedQuality) => {
     if (!anime) return;
     setKodikLoading(true);
@@ -185,21 +155,17 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
 
   const filteredAnimeList = useMemo(() => {
     return animeData.filter(anime => {
-      const sources = catalogSources[anime.id];
-      if (!sources?.length) return false;
       const matchFilter = filter === 'Все' || anime.type === filter;
       const matchSearch = anime.title.toLowerCase().includes(search.toLowerCase());
       return matchFilter && matchSearch;
     });
-  }, [catalogSources, filter, search]);
+  }, [filter, search]);
 
   const handleRandomAnime = () => {
-    const pool = filteredAnimeList.length ? filteredAnimeList : animeData.filter(anime => catalogSources[anime.id]?.length);
-    if (!pool.length) return;
     const min = 0;
-    const max = pool.length - 1;
+    const max = animeData.length - 1;
     const randomIndex = Math.floor(Math.random() * (max - min + 1)) + min;
-    const item = pool[randomIndex];
+    const item = animeData[randomIndex];
     setSelectedVoice(item.voiceovers?.[0] || '');
     setSelectedEpisode(1);
     setSelectedAnime(item);
@@ -328,7 +294,7 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                    ))}
                    {filteredAnimeList.length === 0 && (
                       <div className="col-span-full py-12 text-center text-zinc-500 font-medium">
-                         {catalogLoading ? 'Проверяю AniLibria и AnimeVost...' : `Ничего не найдено по запросу «${search}»`}
+                         Ничего не найдено по запросу «{search}»
                       </div>
                    )}
                 </div>
@@ -353,7 +319,7 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                       </div>
                       <div className="flex justify-between items-center border-b border-[#1F2937] pb-2">
                          <span className="text-zinc-400">Аниме в базе:</span>
-                         <span className="text-white">{filteredAnimeList.length}</span>
+                         <span className="text-white">{animeData.length}</span>
                       </div>
                    </div>
                 </div>
@@ -460,7 +426,7 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                              <span className="px-3 py-1.5 text-sm text-zinc-500">Проверяю серии...</span>
                            )}
                          </div>
-                         {availableQualities.length > 1 && (
+                         {selectedAnime.title === 'Ванпанчмен' && availableQualities.length > 1 && (
                            <div className="flex items-center gap-2">
                              {availableQualities.map(quality => (
                                <button
@@ -513,8 +479,16 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                              </div>
                            </>
                          ) : kodikUrl ? (
-                           (/\.m3u8(\?|$)/i.test(kodikUrl) || /\.mp4(\?|$)/i.test(kodikUrl)) ? (
-                             <CustomPlayer src={kodikUrl} />
+                           /\.m3u8(\?|$)/i.test(kodikUrl) ? (
+                             <HlsPlayer src={kodikUrl} />
+                           ) : /\.mp4(\?|$)/i.test(kodikUrl) ? (
+                             <video
+                               src={kodikUrl}
+                               controls
+                               autoPlay
+                               playsInline
+                               className="w-full h-full bg-black outline-none"
+                             />
                            ) : (
                              <iframe
                                src={kodikUrl}
@@ -528,6 +502,27 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                          ) : (
                            <div className="w-full h-full flex items-center justify-center text-zinc-500">
                              Загрузка плеера...
+                           </div>
+                         )}
+                         {isPlaying && kodikUrl && showPlayerFallback && (
+                           <div className="absolute inset-x-4 bottom-4 z-20 rounded-2xl border border-blue-500/30 bg-[#0A0C10]/90 p-4 backdrop-blur-xl shadow-2xl">
+                             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                               <div>
+                                 <div className="text-sm font-bold text-white">Если встроенный плеер не открылся</div>
+                                 <div className="text-xs text-zinc-400 mt-1">Источник может блокировать iframe на localhost. Откройте плеер в новой вкладке.</div>
+                               </div>
+                               <div className="flex flex-wrap gap-2">
+                                 <a
+                                   href={kodikUrl}
+                                   target="_blank"
+                                   rel="noreferrer"
+                                   className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-600/20 px-3 py-2 text-xs font-bold text-blue-200 hover:bg-blue-600/30"
+                                 >
+                                   <ExternalLink className="w-3.5 h-3.5" />
+                                   Открыть плеер
+                                 </a>
+                               </div>
+                             </div>
                            </div>
                          )}
                       </div>

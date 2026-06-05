@@ -7,6 +7,8 @@ import logoSrc from '../assets/images/jvante_logo.svg';
 import { useVoiceChat } from '../hooks/useVoiceChat';
 import { Mic, MicOff, Smile, Users, X, UserPlus, Globe, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { db } from '../firebase';
+import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface RoomProps {
   roomId: string;
@@ -51,14 +53,44 @@ export function Room({ roomId, roomName, username, uid, avatar, onLeave, isPubli
      return () => clearInterval(interval);
   }, [showInviteModal]);
 
-  // Local-login mode has no shared friends database.
+  // Fetch Friends
   useEffect(() => {
-     if (!showInviteModal) return;
-     setFriendsList([]);
-  }, [showInviteModal]);
+     if (!uid || !showInviteModal) return;
+     const loadFriends = async () => {
+        const userDoc = await getDoc(doc(db, 'users', uid));
+        if (userDoc.exists() && userDoc.data().friends) {
+           const fIds = userDoc.data().friends as string[];
+           const profiles = await Promise.all(
+             fIds.map(async (id) => {
+               const d = await getDoc(doc(db, 'users', id));
+               if (d.exists()) {
+                 return { id: d.id, ...d.data() };
+               }
+               return null;
+             })
+           );
+           setFriendsList(profiles.filter(p => p !== null));
+        }
+     };
+     loadFriends();
+  }, [uid, showInviteModal]);
 
   const handleInviteFriend = async (friendId: string) => {
-     setSentInvites(prev => [...prev, friendId]);
+     if (!uid) return;
+     try {
+        await addDoc(collection(db, 'room_invites'), {
+           to: friendId,
+           from: uid,
+           fromUsername: username,
+           roomId: roomId,
+           roomName: roomState?.name || roomName || `Комната ${roomId}`,
+           isPublic: isPublic,
+           createdAt: serverTimestamp()
+        });
+        setSentInvites(prev => [...prev, friendId]);
+     } catch (e) {
+        console.error("error inviting friend", e);
+     }
   };
 
 
@@ -156,7 +188,7 @@ export function Room({ roomId, roomName, username, uid, avatar, onLeave, isPubli
   const handleUpdateVideoUrl = (url: string) => socket.emit('update_video_url', { url });
   const handlePlayStateChange = (isPlaying: boolean, timestamp: number) => socket.emit('play_state_change', { isPlaying, timestamp });
   const handleSeek = (timestamp: number) => socket.emit('seek', timestamp);
-  const handleForceSync = (timestamp: number) => socket.emit('force_sync', timestamp);
+  const handleForceSync = () => socket.emit('force_sync');
   const handleTransferAdmin = (userId: string) => socket.emit('transfer_admin', userId);
   const handleReportProgress = (timestamp: number) => socket.emit('report_progress', timestamp);
   const handleSendMessage = (text: string, type: string = 'text', mediaUrl?: string) => socket.emit('send_chat', { text, type, mediaUrl });

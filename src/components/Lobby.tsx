@@ -1,38 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { PlaySquare, Users, Video, LogOut, Settings, Upload, X, Search, Key, Plus, Lock, Globe, UserPlus, Check, XCircle, MonitorPlay, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { auth, db } from '../firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseUser } from 'firebase/auth';
+import { doc, setDoc, getDocs, collection, query, where, updateDoc, arrayUnion, onSnapshot, deleteDoc, getDoc } from 'firebase/firestore';
 import logoSrc from '../assets/images/jvante_logo.svg';
-import { LocalUser } from '../App';
 
 interface LobbyProps {
   onJoin: (username: string, roomId: string, avatar?: string, isPublic?: boolean, roomName?: string) => void;
   onWatchAnime?: () => void;
-  user: LocalUser | null;
+  user: FirebaseUser | null;
   defaultUsername: string | null;
   defaultAvatar: string | null;
-  onLogin: (user: LocalUser) => void;
-  onLogout: () => void;
-  onProfileUpdate: (profile: { username: string; avatar?: string }) => void;
 }
-
-interface StoredAccount extends LocalUser {
-  login: string;
-  password: string;
-}
-
-const ACCOUNTS_KEY = 'jvante.accounts';
-
-const getStoredAccounts = (): StoredAccount[] => {
-  try {
-    return JSON.parse(localStorage.getItem(ACCOUNTS_KEY) || '[]') as StoredAccount[];
-  } catch {
-    return [];
-  }
-};
-
-const saveStoredAccounts = (accounts: StoredAccount[]) => {
-  localStorage.setItem(ACCOUNTS_KEY, JSON.stringify(accounts));
-};
 
 const fileToAvatarDataUrl = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -69,7 +49,7 @@ const fileToAvatarDataUrl = (file: File): Promise<string> => {
   });
 };
 
-export function Lobby({ onJoin, onWatchAnime, user, defaultUsername, defaultAvatar, onLogin, onLogout, onProfileUpdate }: LobbyProps) {
+export function Lobby({ onJoin, onWatchAnime, user, defaultUsername, defaultAvatar }: LobbyProps) {
   const [username, setUsername] = useState(defaultUsername || '');
   const [avatar, setAvatar] = useState(defaultAvatar || '');
   
@@ -95,6 +75,7 @@ export function Lobby({ onJoin, onWatchAnime, user, defaultUsername, defaultAvat
   const [activeRooms, setActiveRooms] = useState<any[]>([]);
 
   const normalizeLogin = (value: string) => value.trim().toLowerCase();
+  const loginToAuthEmail = (value: string) => `${normalizeLogin(value)}@jvante.local`;
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -113,16 +94,52 @@ export function Lobby({ onJoin, onWatchAnime, user, defaultUsername, defaultAvat
   const [friendsList, setFriendsList] = useState<any[]>([]);
 
   useEffect(() => {
-    const accounts = getStoredAccounts();
-    setFriendsList(friends.map(id => accounts.find(account => account.uid === id)).filter(Boolean));
+    const fetchFriendsProfiles = async () => {
+      const profiles = await Promise.all(
+        friends.map(async (id) => {
+          const d = await getDoc(doc(db, 'users', id));
+          if (d.exists()) {
+            return { id: d.id, ...d.data() };
+          }
+          return null;
+        })
+      );
+      setFriendsList(profiles.filter(p => p !== null));
+    };
+    if (friends.length > 0) {
+      fetchFriendsProfiles();
+    } else {
+      setFriendsList([]);
+    }
   }, [friends]);
 
-  // Local friends and requests
+  // Realtime Friends and Requests
   useEffect(() => {
     if (!user) return;
-    const current = getStoredAccounts().find(account => account.uid === user.uid) as any;
-    setFriends(current?.friends || []);
-    setFriendRequests([]);
+    
+    // Listen to current user document for friends list
+    const unsubUser = onSnapshot(doc(db, 'users', user.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        setFriends(docSnap.data().friends || []);
+      }
+    }, (error) => {
+      console.error("Listening for User docs failed", error);
+    });
+
+    // Listen to friend requests to me
+    const qRequests = query(collection(db, 'friend_requests'), where('to', '==', user.uid));
+    const unsubRequests = onSnapshot(qRequests, (snap) => {
+      const reqs: any[] = [];
+      snap.forEach(d => reqs.push({ id: d.id, ...d.data() }));
+      setFriendRequests(reqs);
+    }, (error) => {
+      console.error("Listening for Friend requests failed", error);
+    });
+
+    return () => {
+      unsubUser();
+      unsubRequests();
+    };
   }, [user]);
 
   // Fetch active rooms and online users
@@ -164,33 +181,64 @@ export function Lobby({ onJoin, onWatchAnime, user, defaultUsername, defaultAvat
     setSearchError('');
     setSearchResult(null);
     if (!searchUsername.trim()) return;
-
+    
     if (searchUsername.toLowerCase() === username.toLowerCase()) {
-      setSearchError('Нельзя добавить себя');
+      setSearchError('Вы не можете добавить себя');
       return;
     }
 
-    const found = getStoredAccounts().find(account => account.username === searchUsername.trim() || account.login === normalizeLogin(searchUsername));
-    if (!found) {
-      setSearchError('Пользователь не найден локально');
-      return;
+    try {
+      const q = query(collection(db, 'users'), where('username', '==', searchUsername.trim()));
+      const snaps = await getDocs(q);
+      if (snaps.empty) {
+        setSearchError('Пользователь не найден');
+      } else {
+        const foundUser = snaps.docs[0];
+        setSearchResult({ id: foundUser.id, ...foundUser.data() });
+      }
+    } catch (err) {
+      setSearchError('Ошибка поиска');
     }
-    setSearchResult({ id: found.uid, ...found });
   };
 
   const handleSendRequest = async () => {
     if (!user || !searchResult) return;
-    setFriends(prev => Array.from(new Set([...prev, searchResult.id])));
-    setSentRequests(prev => [...prev, searchResult.id]);
+    try {
+      const reqRef = doc(collection(db, 'friend_requests'));
+      await setDoc(reqRef, {
+        from: user.uid,
+        to: searchResult.id,
+        fromUsername: username,
+        fromAvatar: avatar,
+        createdAt: Date.now()
+      });
+      setSentRequests(prev => [...prev, searchResult.id]);
+    } catch (err) {
+      alert('Ошибка при отправке заявки');
+    }
   };
 
   const handleAcceptRequest = async (req: any) => {
-    setFriends(prev => Array.from(new Set([...prev, req.from])));
-    setFriendRequests(prev => prev.filter(item => item.id !== req.id));
+    if (!user) return;
+    try {
+      // Add each other
+      await updateDoc(doc(db, 'users', user.uid), {
+        friends: arrayUnion(req.from)
+      });
+      await updateDoc(doc(db, 'users', req.from), {
+        friends: arrayUnion(user.uid)
+      });
+      // Delete request
+      await deleteDoc(doc(db, 'friend_requests', req.id));
+    } catch (err) {
+      alert('Ошибка при принятии');
+    }
   };
 
   const handleDeclineRequest = async (reqId: string) => {
-    setFriendRequests(prev => prev.filter(item => item.id !== reqId));
+    try {
+      await deleteDoc(doc(db, 'friend_requests', reqId));
+    } catch (err) {}
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -201,43 +249,42 @@ export function Lobby({ onJoin, onWatchAnime, user, defaultUsername, defaultAvat
       setAuthError('Login must be 3-24 chars: latin letters, numbers, . _ -');
       return;
     }
-    if (password.length < 4) {
-      setAuthError('Password must be at least 4 characters');
-      return;
-    }
-
-    const accounts = getStoredAccounts();
-    if (isRegistering) {
-      if (accounts.some(account => account.login === normalizedLogin)) {
-        setAuthError('This login is already taken');
-        return;
+    try {
+      if (isRegistering) {
+        const existing = await getDocs(query(collection(db, 'users'), where('login', '==', normalizedLogin)));
+        if (!existing.empty) {
+          setAuthError('This login is already taken');
+          return;
+        }
+        const userCred = await createUserWithEmailAndPassword(auth, loginToAuthEmail(normalizedLogin), password);
+        await setDoc(doc(db, 'users', userCred.user.uid), {
+          username: normalizedLogin,
+          login: normalizedLogin,
+          authEmail: loginToAuthEmail(normalizedLogin),
+          avatar: '',
+          friends: [],
+          createdAt: Date.now()
+        });
+        alert('Письмо отправлено на почту.');
+      } else {
+        await signInWithEmailAndPassword(auth, loginToAuthEmail(normalizedLogin), password);
       }
-      const account: StoredAccount = {
-        uid: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2),
-        login: normalizedLogin,
-        username: normalizedLogin,
-        password,
-        avatar: '',
-      };
-      saveStoredAccounts([...accounts, account]);
-      onLogin(account);
-      return;
+    } catch (err: any) {
+      setAuthError(err.message || 'Ошибка аутентификации');
     }
-
-    const account = accounts.find(item => item.login === normalizedLogin && item.password === password);
-    if (!account) {
-      setAuthError('Неверный логин или пароль');
-      return;
-    }
-    onLogin(account);
   };
 
   const handleSaveProfile = async () => {
-    const nextUsername = username || 'User';
-    const accounts = getStoredAccounts().map(account => (account.uid === user?.uid ? { ...account, username: nextUsername, avatar: avatar || '' } : account));
-    saveStoredAccounts(accounts);
-    onProfileUpdate({ username: nextUsername, avatar: avatar || '' });
-    setIsEditingProfile(false);
+    if (!user) return;
+    try {
+      await updateDoc(doc(db, 'users', user.uid), {
+        username: username || 'User',
+        avatar: avatar || ''
+      });
+      setIsEditingProfile(false);
+    } catch (err: any) {
+      alert("Error saving profile: " + err.message);
+    }
   };
 
   const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -308,7 +355,7 @@ export function Lobby({ onJoin, onWatchAnime, user, defaultUsername, defaultAvat
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight truncate max-w-[150px]">{username}</h1>
-            <button onClick={() => onLogout()} className="text-xs text-zinc-500 hover:text-red-400 outline-none flex items-center gap-1 transition-colors">
+            <button onClick={() => auth.signOut()} className="text-xs text-zinc-500 hover:text-red-400 outline-none flex items-center gap-1 transition-colors">
               <LogOut className="w-3 h-3" /> Выйти
             </button>
           </div>

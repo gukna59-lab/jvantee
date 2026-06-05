@@ -202,17 +202,6 @@ async function startServer() {
       : '';
   };
 
-  const getTitleQueries = (title: string) => {
-    const normalized = simplifyTitle(title);
-    const aliases = [title];
-
-    if (normalized.includes('каменный океан')) {
-      aliases.push('Каменный океан');
-    }
-
-    return Array.from(new Set(aliases.filter(Boolean)));
-  };
-
   const getAniLibriaScore = (release: AniLibriaRelease, title: string) => {
     const query = simplifyTitle(title);
     if (!query) return 0;
@@ -311,33 +300,23 @@ async function startServer() {
   };
 
   const getAniLibriaSource = async (title: string): Promise<AnimeSource | null> => {
-    for (const query of getTitleQueries(title)) {
-      const release = await getAniLibriaRelease(query);
-      if (!release) continue;
+    const release = await getAniLibriaRelease(title);
+    if (!release) return null;
 
-      const episodes = release.episodes
-        .map(episode => getEpisodeNumber(episode.ordinal) || getEpisodeNumber(episode.sort_order))
-        .filter((episode): episode is number => !!episode)
-        .sort((a, b) => a - b);
+    const episodes = release.episodes
+      .map(episode => getEpisodeNumber(episode.ordinal) || getEpisodeNumber(episode.sort_order))
+      .filter((episode): episode is number => !!episode)
+      .sort((a, b) => a - b);
 
-      const availableEpisodes = manualSourceEpisodes('anilibria', title, Array.from(new Set(episodes)));
-      if (!availableEpisodes.length) continue;
+    const availableEpisodes = manualSourceEpisodes('anilibria', title, Array.from(new Set(episodes)));
+    if (!availableEpisodes.length) return null;
 
-      const qualities = ['1080', '720', '480'].filter(label => release.episodes.some(episode => {
-        if (label === '1080') return !!normalizeExternalUrl(episode.hls_1080);
-        if (label === '720') return !!normalizeExternalUrl(episode.hls_720);
-        return !!normalizeExternalUrl(episode.hls_480);
-      }));
-
-      return {
-        voice: 'AniLibria',
-        provider: 'anilibria',
-        episodes: availableEpisodes,
-        qualities: qualities.length ? qualities : undefined,
-      };
-    }
-
-    return null;
+    return {
+      voice: 'AniLibria',
+      provider: 'anilibria',
+      episodes: availableEpisodes,
+      qualities: simplifyTitle(title) === 'ванпанчмен' ? ['1080', '720', '480'] : undefined,
+    };
   };
 
   const parseAnimeVostTitle = (value: unknown) => {
@@ -399,15 +378,12 @@ async function startServer() {
       .sort((a: number, b: number) => a - b);
 
     if (!episodes.length) return null;
-    const qualities = ['720', '480'].filter(label => playlist.some((episode: any) => {
-      return label === '720' ? !!normalizeExternalUrl(episode.hd) : !!normalizeExternalUrl(episode.std);
-    }));
 
     return {
       voice: 'AnimeVost',
       provider: 'animevost',
       episodes: Array.from(new Set(episodes)),
-      qualities: qualities.length ? qualities : undefined,
+      qualities: simplifyTitle(title) === 'ванпанчмен' ? ['720', '480'] : undefined,
     };
   };
 
@@ -501,6 +477,17 @@ async function startServer() {
       .map(result => result.status === 'fulfilled' ? result.value : null)
       .filter((source): source is AnimeSource => !!source);
 
+    if (!sources.length && fallbackEpisodes > 0) {
+      res.json({
+        sources: [{
+          voice: 'Поиск плеера',
+          provider: 'anilibria',
+          episodes: range(1, fallbackEpisodes),
+        }],
+      });
+      return;
+    }
+
     res.json({ sources });
   });
 
@@ -530,10 +517,7 @@ async function startServer() {
         return;
       }
 
-      for (const query of getTitleQueries(title)) {
-        aniLibriaPlayer = await fetchAniLibriaPlayer(query, episode, quality);
-        if (aniLibriaPlayer) break;
-      }
+      aniLibriaPlayer = await fetchAniLibriaPlayer(title, episode, quality);
     } catch (error) {
       console.warn('AniLibria player lookup failed:', error);
     }
