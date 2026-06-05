@@ -22,7 +22,7 @@ export const animeData: Anime[] = [
     shikimori_id: '16498',
     img: 'https://cdn.myanimelist.net/images/anime/10/47347.jpg',
     plot: longPlot('Люди живут за огромными стенами, спасаясь от титанов.', 'Эрен, Микаса и Армин оказываются внутри войны, где враг перестаёт быть простым чудовищем.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/10/47347.jpg','https://cdn.myanimelist.net/images/anime/10/47347.jpg','https://cdn.myanimelist.net/images/anime/10/47347.jpg'],
     episodes: 25, voiceovers: ['AniLibria', 'Студийная Банда', 'Субтитры'], videoSrc: ''
   },
   {
@@ -30,7 +30,7 @@ export const animeData: Anime[] = [
     shikimori_id: '1535',
     img: 'https://cdn.myanimelist.net/images/anime/9/9453.jpg',
     plot: longPlot('Школьник Лайт находит тетрадь, способную убивать людей по имени.', 'Его противником становится детектив L — интеллектуальная дуэль без права на ошибку.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/9/9453.jpg','https://cdn.myanimelist.net/images/anime/9/9453.jpg','https://cdn.myanimelist.net/images/anime/9/9453.jpg'],
     episodes: 37, voiceovers: ['2x2', 'Любительская', 'Субтитры'], videoSrc: ''
   },
   {
@@ -38,7 +38,7 @@ export const animeData: Anime[] = [
     shikimori_id: '5114',
     img: 'https://cdn.myanimelist.net/images/anime/1223/96541.jpg',
     plot: longPlot('Братья Элрики пытаются вернуть тела после запретной алхимии.', 'Путь за философским камнем приводит к тайнам государства и войне.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/1223/96541.jpg','https://cdn.myanimelist.net/images/anime/1223/96541.jpg','https://cdn.myanimelist.net/images/anime/1223/96541.jpg'],
     episodes: 64, voiceovers: ['AniDub', 'AniLibria', 'Субтитры'], videoSrc: ''
   },
   {
@@ -46,7 +46,7 @@ export const animeData: Anime[] = [
     shikimori_id: '199',
     img: 'https://cdn.myanimelist.net/images/anime/6/79597.jpg',
     plot: longPlot('Тихиро попадает в мир духов, где её родители превращены.', 'Работая в бане ведьмы Юбабы, девочка учится не терять имя и чувство добра.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/6/79597.jpg','https://cdn.myanimelist.net/images/anime/6/79597.jpg','https://cdn.myanimelist.net/images/anime/6/79597.jpg'],
     episodes: 1, voiceovers: ['Дубляж', 'Субтитры'], videoSrc: ''
   },
   {
@@ -54,7 +54,7 @@ export const animeData: Anime[] = [
     shikimori_id: '32281',
     img: 'https://cdn.myanimelist.net/images/anime/5/87048.jpg',
     plot: longPlot('Парень из Токио и девушка из провинции начинают просыпаться в телах друг друга.', 'Их связь становится ключом к событию, которое нельзя игнорировать.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/5/87048.jpg','https://cdn.myanimelist.net/images/anime/5/87048.jpg','https://cdn.myanimelist.net/images/anime/5/87048.jpg'],
     episodes: 1, voiceovers: ['Дубляж', 'Субтитры'], videoSrc: ''
   },
   {
@@ -62,7 +62,7 @@ export const animeData: Anime[] = [
     shikimori_id: '42310',
     img: 'https://cdn.myanimelist.net/images/anime/1818/126435.jpg',
     plot: longPlot('В Найт-Сити подросток Дэвид входит в мир наемников и имплантов.', 'Команда Люси даёт ему шанс стать кем-то большим, но город жесток.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/1818/126435.jpg','https://cdn.myanimelist.net/images/anime/1818/126435.jpg','https://cdn.myanimelist.net/images/anime/1818/126435.jpg'],
     episodes: 10, voiceovers: ['Red Head Sound', 'Субтитры'], videoSrc: ''
   },
   {
@@ -70,7 +70,7 @@ export const animeData: Anime[] = [
     shikimori_id: '30276',
     img: 'https://cdn.myanimelist.net/images/anime/12/76049.jpg',
     plot: longPlot('Сайтама побеждает любого одним ударом и страдает от скуки.', 'За комедией — история о признании, одиночестве и поиске смысла.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/12/76049.jpg','https://cdn.myanimelist.net/images/anime/12/76049.jpg','https://cdn.myanimelist.net/images/anime/12/76049.jpg'],
     episodes: 12, voiceovers: ['JAM', 'AniLibria', 'Субтитры'], videoSrc: ''
   },
   {
@@ -78,7 +78,7 @@ export const animeData: Anime[] = [
     shikimori_id: '30',
     img: 'https://cdn.myanimelist.net/images/anime/1314/108941.jpg',
     plot: longPlot('Подростки пилотируют роботов против загадочных Ангелов.', 'Страх, одиночество и ожидания взрослых давят сильнее любой брони.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/1314/108941.jpg','https://cdn.myanimelist.net/images/anime/1314/108941.jpg','https://cdn.myanimelist.net/images/anime/1314/108941.jpg'],
     episodes: 26, voiceovers: ['Дубляж', 'Субтитры'], videoSrc: ''
   },
   {
@@ -86,7 +86,7 @@ export const animeData: Anime[] = [
     shikimori_id: '9253',
     img: 'https://cdn.myanimelist.net/images/anime/5/73199.jpg',
     plot: longPlot('Группа друзей открывает способ отправлять сообщения в прошлое.', 'Игра с причиной и следствием ломает реальность, заставляя платить за каждое изменение.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/5/73199.jpg','https://cdn.myanimelist.net/images/anime/5/73199.jpg','https://cdn.myanimelist.net/images/anime/5/73199.jpg'],
     episodes: 24, voiceovers: ['AniDub', 'AniLibria', 'Субтитры'], videoSrc: ''
   },
   {
@@ -94,7 +94,7 @@ export const animeData: Anime[] = [
     shikimori_id: '431',
     img: 'https://cdn.myanimelist.net/images/anime/5/75810.jpg',
     plot: longPlot('Софи превращают в старуху, и она отправляется в странствие с Хаулом.', 'Волшебный замок становится домом для людей, которые прячут раны за масками.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/5/75810.jpg','https://cdn.myanimelist.net/images/anime/5/75810.jpg','https://cdn.myanimelist.net/images/anime/5/75810.jpg'],
     episodes: 1, voiceovers: ['Дубляж', 'Субтитры'], videoSrc: ''
   },
   {
@@ -102,7 +102,7 @@ export const animeData: Anime[] = [
     shikimori_id: '44511',
     img: 'https://cdn.myanimelist.net/images/anime/1806/126216.jpg',
     plot: longPlot('Дэндзи живёт в долгах и охотится на демонов вместе с Почитой.', 'Попав в Бюро безопасности, он сталкивается с властью и людьми которым сложно доверять.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/1806/126216.jpg','https://cdn.myanimelist.net/images/anime/1806/126216.jpg','https://cdn.myanimelist.net/images/anime/1806/126216.jpg'],
     episodes: 12, voiceovers: ['AniLibria', 'Студийная Банда', 'Субтитры'], videoSrc: ''
   },
   {
@@ -110,7 +110,7 @@ export const animeData: Anime[] = [
     shikimori_id: '40748',
     img: 'https://cdn.myanimelist.net/images/anime/1171/109222.jpg',
     plot: longPlot('Юдзи Итадори проглатывает проклятый палец и становится сосудом Сукуны.', 'Школа магии открывает мир проклятий, где за каждый шанс приходится платить.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/1171/109222.jpg','https://cdn.myanimelist.net/images/anime/1171/109222.jpg','https://cdn.myanimelist.net/images/anime/1171/109222.jpg'],
     episodes: 24, voiceovers: ['AniLibria', 'Crunchyroll', 'Субтитры'], videoSrc: ''
   },
   {
@@ -118,7 +118,7 @@ export const animeData: Anime[] = [
     shikimori_id: '38000',
     img: 'https://cdn.myanimelist.net/images/anime/1286/99889.jpg',
     plot: longPlot('Тандзиро теряет семью, а его сестра Нэдзуко становится демоном.', 'Он вступает в корпус охотников, чтобы найти лекарство для сестры.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/1286/99889.jpg','https://cdn.myanimelist.net/images/anime/1286/99889.jpg','https://cdn.myanimelist.net/images/anime/1286/99889.jpg'],
     episodes: 26, voiceovers: ['AniDub', 'AniLibria', 'Субтитры'], videoSrc: ''
   },
   {
@@ -126,7 +126,7 @@ export const animeData: Anime[] = [
     shikimori_id: '20583',
     img: 'https://cdn.myanimelist.net/images/anime/7/76014.jpg',
     plot: longPlot('Хината мечтает стать звездой волейбола и попадает в команду Карасуно.', 'Соперничество с Кагэямой превращается в партнёрство.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/7/76014.jpg','https://cdn.myanimelist.net/images/anime/7/76014.jpg','https://cdn.myanimelist.net/images/anime/7/76014.jpg'],
     episodes: 25, voiceovers: ['AniLibria', 'Субтитры'], videoSrc: ''
   },
   {
@@ -134,7 +134,7 @@ export const animeData: Anime[] = [
     shikimori_id: '31964',
     img: 'https://cdn.myanimelist.net/images/anime/10/78745.jpg',
     plot: longPlot('Изуку рождается без способностей, но мечтает стать героем.', 'Получив шанс от Всемогущего, он учится: героизм — это ответственность.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/10/78745.jpg','https://cdn.myanimelist.net/images/anime/10/78745.jpg','https://cdn.myanimelist.net/images/anime/10/78745.jpg'],
     episodes: 13, voiceovers: ['AniDub', 'AniLibria', 'Субтитры'], videoSrc: ''
   },
   {
@@ -142,7 +142,7 @@ export const animeData: Anime[] = [
     shikimori_id: '21',
     img: 'https://cdn.myanimelist.net/images/anime/6/73245.jpg',
     plot: longPlot('Луффи собирает команду пиратов и ищет легендарное сокровище One Piece.', 'Путешествие по морям — хроника дружбы, свободы и битв.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/6/73245.jpg','https://cdn.myanimelist.net/images/anime/6/73245.jpg','https://cdn.myanimelist.net/images/anime/6/73245.jpg'],
     episodes: 100, voiceovers: ['2x2', 'AniLibria', 'Субтитры'], videoSrc: ''
   },
   {
@@ -150,7 +150,7 @@ export const animeData: Anime[] = [
     shikimori_id: '20',
     img: 'https://cdn.myanimelist.net/images/anime/13/17405.jpg',
     plot: longPlot('Наруто мечтает стать хокаге, хотя деревня видит в нём источник страха.', 'Тренировки и соперничество с Саске раскрывают силу связей.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/13/17405.jpg','https://cdn.myanimelist.net/images/anime/13/17405.jpg','https://cdn.myanimelist.net/images/anime/13/17405.jpg'],
     episodes: 100, voiceovers: ['Дубляж', 'AniDub', 'Субтитры'], videoSrc: ''
   },
   {
@@ -158,7 +158,7 @@ export const animeData: Anime[] = [
     shikimori_id: '269',
     img: 'https://cdn.myanimelist.net/images/anime/3/40451.jpg',
     plot: longPlot('Ичиго получает силы синигами и защищает людей от пустых.', 'Новая сила втягивает в конфликты Общества душ.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/3/40451.jpg','https://cdn.myanimelist.net/images/anime/3/40451.jpg','https://cdn.myanimelist.net/images/anime/3/40451.jpg'],
     episodes: 100, voiceovers: ['AniDub', 'Субтитры'], videoSrc: ''
   },
   {
@@ -166,7 +166,7 @@ export const animeData: Anime[] = [
     shikimori_id: '32182',
     img: 'https://cdn.myanimelist.net/images/anime/8/80356.jpg',
     plot: longPlot('Моб обладает невероятной силой, но хочет обычной жизни.', 'Рядом с наставником Рейгеном он узнаёт: сила не заменяет честность.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/8/80356.jpg','https://cdn.myanimelist.net/images/anime/8/80356.jpg','https://cdn.myanimelist.net/images/anime/8/80356.jpg'],
     episodes: 12, voiceovers: ['AniLibria', 'Субтитры'], videoSrc: ''
   },
   {
@@ -174,7 +174,7 @@ export const animeData: Anime[] = [
     shikimori_id: '19',
     img: 'https://cdn.myanimelist.net/images/anime/10/18297.jpg',
     plot: longPlot('Хирург Тэнма спасает мальчика, связанного с серией преступлений.', 'Погоня по Европе — расследование о вине, выборе и природе зла.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/10/18297.jpg','https://cdn.myanimelist.net/images/anime/10/18297.jpg','https://cdn.myanimelist.net/images/anime/10/18297.jpg'],
     episodes: 74, voiceovers: ['Субтитры', 'Любительская'], videoSrc: ''
   },
   {
@@ -182,7 +182,7 @@ export const animeData: Anime[] = [
     shikimori_id: '19755',
     img: 'https://cdn.myanimelist.net/images/anime/1595/107426.jpg',
     plot: longPlot('Юный ученик, мечтающий шить обувь, встречает женщину в дождливом саду.', 'Тихие встречи — способ пережить одиночество и шагнуть вперёд.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/1595/107426.jpg','https://cdn.myanimelist.net/images/anime/1595/107426.jpg','https://cdn.myanimelist.net/images/anime/1595/107426.jpg'],
     episodes: 1, voiceovers: ['Дубляж', 'Субтитры'], videoSrc: ''
   },
   {
@@ -190,7 +190,7 @@ export const animeData: Anime[] = [
     shikimori_id: '33352',
     img: 'https://cdn.myanimelist.net/images/anime/1795/95088.jpg',
     plot: longPlot('Вайолет становится автозапоминателем и пишет письма для людей.', 'Через чужие истории она понимает смысл слов самого дорогого человека.'),
-    screenshots: ["https://images.unsplash.com/photo-1578632767115-351597cf2477?w=1200&q=80","https://images.unsplash.com/photo-1541562232579-512a21360020?w=1200&q=80","https://images.unsplash.com/photo-1614583224978-f05ce51ef5fa?w=1200&q=80","https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1200&q=80"],
+    screenshots: ['https://cdn.myanimelist.net/images/anime/1795/95088.jpg','https://cdn.myanimelist.net/images/anime/1795/95088.jpg','https://cdn.myanimelist.net/images/anime/1795/95088.jpg'],
     episodes: 13, voiceovers: ['AniLibria', 'Netflix', 'Субтитры'], videoSrc: ''
   }
 ];

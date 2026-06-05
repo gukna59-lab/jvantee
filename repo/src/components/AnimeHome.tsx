@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, Search, Grid, List, PlaySquare, TrendingUp, Star, Eye, ChevronRight, LayoutGrid, MonitorPlay, Film, Tv, Clock, Languages } from 'lucide-react';
+import { ArrowLeft, Search, Grid, List, PlaySquare, TrendingUp, Star, Eye, ChevronRight, LayoutGrid, MonitorPlay, Film, Tv, Clock, Languages, ExternalLink } from 'lucide-react';
 import logoSrc from '../assets/images/jvante_logo_1780506650738.png';
 import { animeData, Anime } from '../data/animeData';
 
@@ -21,8 +21,17 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
   const [selectedVoice, setSelectedVoice] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [kodikUrl, setKodikUrl] = useState<string | null>(null);
+  const [kodikDomain, setKodikDomain] = useState<string>('kodik.cc');
   const [kodikLoading, setKodikLoading] = useState(false);
   const [kodikError, setKodikError] = useState<string | null>(null);
+  const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [screenshotsLoading, setScreenshotsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (isPlaying && kodikUrl) {
+      setKodikUrl(`https://${kodikDomain}/find-player?shikimoriID=${selectedAnime?.shikimori_id}&episode=${selectedEpisode}`);
+    }
+  }, [kodikDomain]);
 
   React.useEffect(() => {
     setIsPlaying(false);
@@ -30,22 +39,63 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
     setKodikError(null);
   }, [selectedAnime, selectedEpisode, selectedVoice]);
 
-  // Removed broken Shikimori fetch to use stable IMDb/static screenshots
+  React.useEffect(() => {
+    if (!selectedAnime) return;
+    setScreenshots([]);
+    setScreenshotsLoading(true);
+    fetch(`https://shikimori.one/api/animes/${selectedAnime.shikimori_id}/screenshots`)
+      .then(r => r.json())
+      .then((data: any) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const validScreenshots = data.slice(0, 6).map((pic: any) => {
+            const path = pic.original || pic.preview;
+            return path.startsWith('/') ? `https://shikimori.one${path}` : path;
+          });
+          setScreenshots(validScreenshots);
+        } else {
+          setScreenshots(selectedAnime.screenshots || []);
+        }
+      })
+      .catch(() => {
+        setScreenshots(selectedAnime.screenshots || []);
+      })
+      .finally(() => setScreenshotsLoading(false));
+  }, [selectedAnime]);
+
   const fetchKodikPlayer = async (anime: Anime | null) => {
     if (!anime) return;
     setKodikLoading(true);
     setKodikError(null);
     setKodikUrl(null);
     
-    // Using direct player URL which works in an Iframe instead of making blocked API requests
-    // Using player.smotret-anime.com or kodik.info as a fallback player router
-    setTimeout(() => {
-      // Adding a direct player iframe source. 
-      // Another alternative: `https://kodik.info/find-player?shikimoriID=${anime.shikimori_id}`
-      setKodikUrl(`https://kodik.info/find-player?shikimoriID=${anime.shikimori_id}&episode=${selectedEpisode}`);
+    try {
+      // Плееры пиратских сайтов (Kodik) часто блокируются фреймами из-за защиты CORS или AdBlock.
+      // Поэтому мы берем ютуб-трейлер с шикимори как заглушку плеера внутри интерфейса,
+      // а реальную ссылку на серию дадим для открытия в новой вкладке.
+      const res = await fetch(`https://shikimori.one/api/animes/${anime.shikimori_id}/videos`);
+      const data = await res.json();
+      
+      const externalKodikUrl = `https://${kodikDomain}/find-player?shikimoriID=${anime.shikimori_id}&episode=${selectedEpisode}`;
+      let finalUrl = externalKodikUrl;
+      
+      // Ищем ютуб видео (оно не блокируется фреймами) для предпросмотра
+      if (Array.isArray(data) && data.length > 0) {
+         const ytVideo = data.find((v: any) => v.hosting === 'youtube' && v.player_url) || data[0];
+         if (ytVideo && ytVideo.player_url) {
+            // Оставляем внешний плеер по умолчанию вместо ютуба, 
+            // так как ютуб - это всего лишь трейлер, а пользователю нужна серия.
+            finalUrl = externalKodikUrl;
+         }
+      }
+      
+      setKodikUrl(finalUrl);
       setIsPlaying(true);
+    } catch {
+      setKodikUrl(`https://${kodikDomain}/find-player?shikimoriID=${anime.shikimori_id}&episode=${selectedEpisode}`);
+      setIsPlaying(true);
+    } finally {
       setKodikLoading(false);
-    }, 500);
+    }
   };
 
   const scrollToPlayer = () => {
@@ -283,15 +333,22 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                       </div>
 
                       <h3 className="text-lg font-bold text-zinc-300 mb-4">Кадры из аниме</h3>
-                      {selectedAnime.screenshots && selectedAnime.screenshots.length > 0 ? (
+                      {screenshotsLoading ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          {selectedAnime.screenshots.map((src, i) => (
+                          {[...Array(4)].map((_, i) => (
+                            <div key={i} className="aspect-video rounded-2xl bg-zinc-800 animate-pulse" />
+                          ))}
+                        </div>
+                      ) : screenshots.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {screenshots.map((src, i) => (
                             <div key={i} className="aspect-video rounded-2xl overflow-hidden border border-[#1F2937]">
                               <img
                                 src={src}
                                 alt={`Кадр ${i + 1}`}
                                 referrerPolicy="no-referrer"
                                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                                onError={(e) => { e.currentTarget.src = selectedAnime.img; }}
                               />
                             </div>
                           ))}
@@ -317,6 +374,23 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                               </button>
                            ))}
                          </div>
+                         
+                         {isPlaying && (
+                           <div className="flex items-center gap-2">
+                             <span className="text-xs text-zinc-500 font-medium">Зеркало:</span>
+                             <div className="flex items-center bg-[#11141A] rounded-lg border border-[#1F2937] overflow-hidden">
+                                {['kodik.cc', 'kodik.info', 'kodik.biz'].map((domain) => (
+                                  <button 
+                                    key={domain}
+                                    onClick={() => setKodikDomain(domain)}
+                                    className={`px-3 py-1.5 text-xs font-semibold transition-colors ${kodikDomain === domain ? 'bg-[#1F2937] text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
+                                  >
+                                    {domain.replace('kodik.', '')}
+                                  </button>
+                                ))}
+                             </div>
+                           </div>
+                         )}
                       </div>
 
                        {/* Kodik Video Player */}
@@ -354,22 +428,27 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                              </div>
                            </>
                          ) : kodikUrl ? (
-                           kodikUrl.endsWith('.mp4') ? (
-                             <video 
-                               src={kodikUrl} 
-                               controls 
-                               autoPlay 
-                               className="w-full h-full outline-none"
-                             />
-                           ) : (
+                           <div className="w-full h-full relative group">
                              <iframe
                                src={kodikUrl}
-                               className="w-full h-full border-0"
+                               className="w-full h-full border-0 absolute inset-0"
                                allowFullScreen
                                allow="autoplay; fullscreen"
                                title={selectedAnime.title}
                              />
-                           )
+                             <div className="absolute top-4 right-4 z-10 transition-opacity">
+                                <a 
+                                   href={kodikUrl.includes('youtube') ? `https://${kodikDomain}/find-player?shikimoriID=${selectedAnime.shikimori_id}&episode=${selectedEpisode}` : kodikUrl} 
+                                   target="_blank" 
+                                   rel="noopener noreferrer"
+                                   className="px-4 py-2 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white border border-[#1F2937] rounded-lg font-medium shadow-lg backdrop-blur text-xs flex items-center gap-2 transition-all"
+                                   title="Если плеер не грузится (ошибка ERR_CONNECTION_CLOSED), откройте его в новой вкладке или смените зеркало выше"
+                                >
+                                   <ExternalLink className="w-3 h-3" />
+                                   Если плеер не работает - открыть в новой вкладке
+                                </a>
+                             </div>
+                           </div>
                          ) : (
                            <div className="w-full h-full flex items-center justify-center text-zinc-500">
                              Загрузка плеера...
