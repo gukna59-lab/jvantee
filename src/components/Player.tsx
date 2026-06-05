@@ -231,7 +231,7 @@ export function Player({
           <div className="absolute inset-0 w-full h-full text-white">
             <PlayerComponent
               ref={playerRef}
-              src={roomState.videoUrl}
+              url={roomState.videoUrl}
               width="100%"
               height="100%"
               playing={roomState.isPlaying}
