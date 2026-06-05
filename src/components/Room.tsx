@@ -3,7 +3,7 @@ import { socket } from '../lib/socket';
 import { RoomState, User, Message } from '../types';
 import { Player } from './Player';
 import { Chat } from './Chat';
-import logoSrc from '../assets/images/jvante_logo.svg';
+import logoSrc from '../assets/images/jvante_logo_1780506650738.png';
 import { useVoiceChat } from '../hooks/useVoiceChat';
 import { Mic, MicOff, Smile, Users, X, UserPlus, Globe, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -220,7 +220,7 @@ export function Room({ roomId, roomName, username, uid, avatar, onLeave, isPubli
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg overflow-hidden border border-[#1F2937] bg-[#0F172A]">
-              <img src={logoSrc} alt="Jvante Logo" className="w-full h-full object-contain p-1" />
+              <img src={logoSrc} alt="Jvante Logo" className="w-full h-full object-cover" />
             </div>
             <div className="text-xl lg:text-2xl font-black tracking-tighter text-[#3B82F6]">JVANTE</div>
           </div>

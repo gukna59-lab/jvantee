@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { auth, db } from '../firebase';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, User as FirebaseUser } from 'firebase/auth';
 import { doc, setDoc, getDocs, collection, query, where, updateDoc, arrayUnion, onSnapshot, deleteDoc, getDoc } from 'firebase/firestore';
-import logoSrc from '../assets/images/jvante_logo.svg';
+import logoSrc from '../assets/images/jvante_logo_1780506650738.png';
 
 interface LobbyProps {
   onJoin: (username: string, roomId: string, avatar?: string, isPublic?: boolean, roomName?: string) => void;
@@ -312,7 +312,7 @@ export function Lobby({ onJoin, onWatchAnime, user, defaultUsername, defaultAvat
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
           <div className="flex items-center gap-3 mb-8">
             <div className="w-12 h-12 bg-[#0F172A] rounded-2xl flex items-center justify-center border border-[#1F2937] shadow-inner overflow-hidden">
-              <img src={logoSrc} alt="Jvante Logo" className="w-full h-full object-contain p-1" />
+              <img src={logoSrc} alt="Jvante Logo" className="w-full h-full object-cover" />
             </div>
             <h1 className="text-3xl font-black tracking-tighter text-[#3B82F6]">JVANTE</h1>
           </div>
@@ -351,7 +351,7 @@ export function Lobby({ onJoin, onWatchAnime, user, defaultUsername, defaultAvat
       <header className="w-full max-w-4xl px-4 py-6 flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-[#11141A] rounded-2xl flex items-center justify-center border border-[#1F2937] overflow-hidden">
-            {avatar ? <img src={avatar} alt="avatar" className="w-full h-full object-cover" /> : <img src={logoSrc} alt="Jvante Logo" className="w-full h-full object-contain p-1" />}
+            {avatar ? <img src={avatar} alt="avatar" className="w-full h-full object-cover" /> : <img src={logoSrc} alt="Jvante Logo" className="w-full h-full object-cover" />}
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight truncate max-w-[150px]">{username}</h1>
