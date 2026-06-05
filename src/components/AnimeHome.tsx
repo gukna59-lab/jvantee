@@ -20,10 +20,63 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
   const [selectedEpisode, setSelectedEpisode] = useState(1);
   const [selectedVoice, setSelectedVoice] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState(false);
+  const [kodikUrl, setKodikUrl] = useState<string | null>(null);
+  const [kodikLoading, setKodikLoading] = useState(false);
+  const [kodikError, setKodikError] = useState<string | null>(null);
+  const [screenshots, setScreenshots] = useState<string[]>([]);
+  const [screenshotsLoading, setScreenshotsLoading] = useState(false);
 
   React.useEffect(() => {
     setIsPlaying(false);
+    setKodikUrl(null);
+    setKodikError(null);
   }, [selectedAnime, selectedEpisode, selectedVoice]);
+
+  // Fetch real screenshots from Shikimori when anime is selected
+  React.useEffect(() => {
+    if (!selectedAnime) return;
+    setScreenshots([]);
+    setScreenshotsLoading(true);
+    fetch(`https://shikimori.one/api/animes/${selectedAnime.shikimori_id}/screenshots`, {
+      headers: { 'User-Agent': 'jvante/1.0' }
+    })
+      .then(r => r.json())
+      .then((data: { preview: string; original: string }[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setScreenshots(data.slice(0, 6).map(s => s.preview || s.original));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setScreenshotsLoading(false));
+  }, [selectedAnime]);
+
+  const fetchKodikPlayer = async (anime: Anime | null) => {
+    if (!anime) return;
+    setKodikLoading(true);
+    setKodikError(null);
+    setKodikUrl(null);
+    try {
+      const token = '447d179e875efe44217f20d1ee2146be';
+      const res = await fetch(
+        `https://kodikapi.com/search?token=${token}&shikimori_id=${anime.shikimori_id}&with_episodes=true`
+      );
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        const match = data.results.find((r: any) =>
+          selectedVoice && r.translation?.title?.toLowerCase().includes(selectedVoice.toLowerCase())
+        ) || data.results[0];
+        const link = match.link.startsWith('//') ? 'https:' + match.link : match.link;
+        setKodikUrl(link + `?episode=${selectedEpisode}&autoplay=1`);
+        setIsPlaying(true);
+      } else {
+        setKodikError('Серия не найдена в Kodik. Попробуйте другую озвучку.');
+      }
+    } catch {
+      setKodikError('Ошибка загрузки плеера. Проверьте подключение.');
+    } finally {
+      setKodikLoading(false);
+    }
+  };
 
   const scrollToPlayer = () => {
     document.getElementById('anime-player-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -260,19 +313,28 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                       </div>
 
                       <h3 className="text-lg font-bold text-zinc-300 mb-4">Кадры из аниме</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                         {selectedAnime.screenshots.map((src, i) => (
+                      {screenshotsLoading ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {[...Array(4)].map((_, i) => (
+                            <div key={i} className="aspect-video rounded-2xl bg-zinc-800 animate-pulse" />
+                          ))}
+                        </div>
+                      ) : screenshots.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {screenshots.map((src, i) => (
                             <div key={i} className="aspect-video rounded-2xl overflow-hidden border border-[#1F2937]">
-                               <img 
-                                 src={src} 
-                                 alt={`Кадр ${i + 1}`} 
-                                 referrerPolicy="no-referrer" 
-                                 onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200'; }}
-                                 className="w-full h-full object-cover" 
-                               />
+                              <img
+                                src={src.startsWith('//') ? 'https:' + src : src}
+                                alt={`Кадр ${i + 1}`}
+                                referrerPolicy="no-referrer"
+                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                              />
                             </div>
-                         ))}
-                      </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-zinc-500 text-sm">Скриншоты не найдены</p>
+                      )}
                    </div>
 
                    {/* Fake Player Section */}
@@ -293,20 +355,32 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                          </div>
                       </div>
 
-                       {/* Video Player Mock */}
+                       {/* Kodik Video Player */}
                       <div className="aspect-video bg-black relative group flex items-stretch justify-center">
                          {!isPlaying ? (
                            <>
                              <img 
                                src={selectedAnime.screenshots[0] || selectedAnime.img} 
-                               onError={(e) => { e.currentTarget.src = 'https://images.unsplash.com/photo-1578632767115-351597cf2477?q=80&w=1200'; }}
+                               onError={(e) => { e.currentTarget.src = selectedAnime.img; }}
                                referrerPolicy="no-referrer" 
                                className="absolute inset-0 w-full h-full object-cover opacity-30" 
                                alt="Player background"
                              />
-                             <div className="absolute inset-0 flex items-center justify-center">
-                                <button onClick={() => setIsPlaying(true)} className="w-20 h-20 rounded-full bg-blue-600/80 hover:bg-blue-500 hover:scale-110 flex items-center justify-center transition-all shadow-blue-500/50 shadow-lg backdrop-blur z-10">
-                                   <PlaySquare className="w-8 h-8 ml-1 text-white" />
+                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                                {kodikError && (
+                                  <div className="bg-red-500/20 border border-red-500/40 text-red-300 text-sm px-4 py-2 rounded-xl max-w-xs text-center">
+                                    {kodikError}
+                                  </div>
+                                )}
+                                <button 
+                                  onClick={() => fetchKodikPlayer(selectedAnime)} 
+                                  disabled={kodikLoading}
+                                  className="w-20 h-20 rounded-full bg-blue-600/80 hover:bg-blue-500 hover:scale-110 flex items-center justify-center transition-all shadow-blue-500/50 shadow-lg backdrop-blur z-10 disabled:opacity-60 disabled:cursor-wait"
+                                >
+                                  {kodikLoading 
+                                    ? <div className="w-8 h-8 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                                    : <PlaySquare className="w-8 h-8 ml-1 text-white" />
+                                  }
                                 </button>
                              </div>
                              <div className="absolute bottom-4 left-4 right-4 text-center z-10">
@@ -315,16 +389,17 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                                 </span>
                              </div>
                            </>
+                         ) : kodikUrl ? (
+                           <iframe
+                             src={kodikUrl}
+                             className="w-full h-full border-0"
+                             allowFullScreen
+                             allow="autoplay; fullscreen"
+                             title={selectedAnime.title}
+                           />
                          ) : (
-                           <div className="w-full h-full flex items-center justify-center bg-black relative">
-                              <video 
-                                className="w-full h-full outline-none"
-                                controls 
-                                autoPlay 
-                                src="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4"
-                              >
-                                Ваш браузер не поддерживает видео.
-                              </video>
+                           <div className="w-full h-full flex items-center justify-center text-zinc-500">
+                             Загрузка плеера...
                            </div>
                          )}
                       </div>
