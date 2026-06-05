@@ -188,7 +188,7 @@ export function Room({ roomId, roomName, username, uid, avatar, onLeave, isPubli
   const handleUpdateVideoUrl = (url: string) => socket.emit('update_video_url', { url });
   const handlePlayStateChange = (isPlaying: boolean, timestamp: number) => socket.emit('play_state_change', { isPlaying, timestamp });
   const handleSeek = (timestamp: number) => socket.emit('seek', timestamp);
-  const handleForceSync = () => socket.emit('force_sync');
+  const handleForceSync = (timestamp: number) => socket.emit('force_sync', timestamp);
   const handleTransferAdmin = (userId: string) => socket.emit('transfer_admin', userId);
   const handleReportProgress = (timestamp: number) => socket.emit('report_progress', timestamp);
   const handleSendMessage = (text: string, type: string = 'text', mediaUrl?: string) => socket.emit('send_chat', { text, type, mediaUrl });

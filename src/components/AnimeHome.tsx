@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Search, Grid, List, PlaySquare, TrendingUp, Star, Eye, ChevronRight, LayoutGrid, MonitorPlay, Film, Tv, Clock, Languages, ExternalLink } from 'lucide-react';
 import logoSrc from '../assets/images/jvante_logo_1780506650738.png';
 import { animeData, Anime } from '../data/animeData';
-import { HlsPlayer } from './HlsPlayer';
+import { CustomPlayer } from './CustomPlayer';
 
 interface AnimeHomeProps {
   onBack: () => void;
@@ -42,6 +42,12 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
 
   const fetchKodikPlayer = async (anime: Anime | null) => {
     if (!anime) return;
+    
+    if (anime.videoSrc) {
+      setKodikUrl(anime.videoSrc);
+      return;
+    }
+
     setKodikLoading(true);
     setKodikError(null);
     setKodikUrl(null);
@@ -378,16 +384,8 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                              </div>
                            </>
                          ) : kodikUrl ? (
-                           /\.m3u8(\?|$)/i.test(kodikUrl) ? (
-                             <HlsPlayer src={kodikUrl} />
-                           ) : /\.mp4(\?|$)/i.test(kodikUrl) ? (
-                             <video
-                               src={kodikUrl}
-                               controls
-                               autoPlay
-                               playsInline
-                               className="w-full h-full bg-black outline-none"
-                             />
+                           (/\.m3u8(\?|$)/i.test(kodikUrl) || /\.mp4(\?|$)/i.test(kodikUrl)) ? (
+                             <CustomPlayer src={kodikUrl} />
                            ) : (
                              <iframe
                                src={kodikUrl}
@@ -401,27 +399,6 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                          ) : (
                            <div className="w-full h-full flex items-center justify-center text-zinc-500">
                              Загрузка плеера...
-                           </div>
-                         )}
-                         {isPlaying && kodikUrl && showPlayerFallback && (
-                           <div className="absolute inset-x-4 bottom-4 z-20 rounded-2xl border border-blue-500/30 bg-[#0A0C10]/90 p-4 backdrop-blur-xl shadow-2xl">
-                             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                               <div>
-                                 <div className="text-sm font-bold text-white">Если встроенный плеер не открылся</div>
-                                 <div className="text-xs text-zinc-400 mt-1">Источник может блокировать iframe на localhost. Откройте плеер в новой вкладке.</div>
-                               </div>
-                               <div className="flex flex-wrap gap-2">
-                                 <a
-                                   href={kodikUrl}
-                                   target="_blank"
-                                   rel="noreferrer"
-                                   className="inline-flex items-center gap-2 rounded-xl border border-blue-500/30 bg-blue-600/20 px-3 py-2 text-xs font-bold text-blue-200 hover:bg-blue-600/30"
-                                 >
-                                   <ExternalLink className="w-3.5 h-3.5" />
-                                   Открыть плеер
-                                 </a>
-                               </div>
-                             </div>
                            </div>
                          )}
                       </div>

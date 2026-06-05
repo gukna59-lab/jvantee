@@ -181,7 +181,6 @@ async function startServer() {
     ].filter(Boolean);
 
     if (names.some(name => name === query)) return 100;
-    if (names.some(name => name.includes(query) || query.includes(name))) return 70;
 
     const queryWords = new Set(query.split(' ').filter(word => word.length > 2));
     if (!queryWords.size) return 0;
@@ -190,7 +189,48 @@ async function startServer() {
       return Array.from(queryWords).filter(word => nameWords.has(word)).length / queryWords.size;
     }), 0);
 
-    return bestOverlap >= 0.75 ? 50 : 0;
+    const isPrefix = names.some(name => name.startsWith(query) || name.includes(query + ' '));
+    return bestOverlap >= 0.75 && isPrefix ? 50 : 0;
+  };
+
+  const fetchAnimeVostPlayer = async (title: string, episode: string) => {
+    if (!title) return null;
+
+    try {
+      const searchRes = await fetch("https://api.animevost.org/v1/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "name=" + encodeURIComponent(title)
+      });
+      const searchData = await searchRes.json();
+      if (!searchData || !searchData.data || !searchData.data.length) return null;
+
+      const match = searchData.data.find((d: any) => {
+        const ruTitle = d.title.split('/')[0].split('[')[0].trim().toLowerCase();
+        const tl = title.toLowerCase();
+        return ruTitle === tl || ruTitle.startsWith(tl + ' ') || ruTitle.endsWith(' ' + tl);
+      }) || searchData.data[0];
+
+      const playlistRes = await fetch("https://api.animevost.org/v1/playlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: "id=" + match.id
+      });
+      const playlistData = await playlistRes.json();
+      if (!Array.isArray(playlistData)) return null;
+
+      const ep = playlistData.find((e: any) => e.name.includes(`${episode} серия`));
+      if (ep && (ep.hd || ep.std)) {
+        return {
+          url: ep.hd || ep.std,
+          provider: 'animevost',
+          releaseId: String(match.id)
+        };
+      }
+    } catch (e) {
+      console.warn("AnimeVost lookup failed:", e);
+    }
+    return null;
   };
 
   const fetchAniLibriaPlayer = async (title: string, episode: string) => {
@@ -216,42 +256,42 @@ async function startServer() {
       .filter(item => item.score > 0)
       .sort((a, b) => b.score - a.score);
 
-    const match = scoredReleases[0]?.release;
-    const releaseId = typeof match?.id === 'number' || typeof match?.id === 'string' ? String(match.id) : '';
-    if (!match || !releaseId) return null;
+    for (const item of scoredReleases) {
+      const match = item.release;
+      const releaseId = typeof match?.id === 'number' || typeof match?.id === 'string' ? String(match.id) : '';
+      if (!match || !releaseId) continue;
 
-    const releaseUrl = new URL(`https://anilibria.top/api/v1/anime/releases/${encodeURIComponent(releaseId)}`);
-    releaseUrl.searchParams.set('include', 'episodes');
+      const releaseUrl = new URL(`https://anilibria.top/api/v1/anime/releases/${encodeURIComponent(releaseId)}`);
+      releaseUrl.searchParams.set('include', 'episodes');
 
-    const releaseResponse = await fetch(releaseUrl, {
-      headers: {
-        Accept: 'application/json',
-        'User-Agent': 'Jvante anime player',
-      },
-    });
+      const releaseResponse = await fetch(releaseUrl, {
+        headers: {
+          Accept: 'application/json',
+          'User-Agent': 'Jvante anime player',
+        },
+      });
 
-    if (releaseResponse.ok) {
-      const releaseData = await releaseResponse.json();
-      const episodes = Array.isArray(releaseData?.episodes) ? releaseData.episodes as AniLibriaEpisode[] : [];
-      const episodeNumber = Number(episode);
-      const selectedEpisode = episodes.find(item => Number(item.ordinal) === episodeNumber)
-        || episodes.find(item => Number(item.sort_order) === episodeNumber)
-        || (episodeNumber === 1 ? episodes[0] : null);
-      const hlsUrl = normalizeExternalUrl(selectedEpisode?.hls_1080)
-        || normalizeExternalUrl(selectedEpisode?.hls_720)
-        || normalizeExternalUrl(selectedEpisode?.hls_480);
+      if (releaseResponse.ok) {
+        const releaseData = await releaseResponse.json();
+        const episodes = Array.isArray(releaseData?.episodes) ? releaseData.episodes as AniLibriaEpisode[] : [];
+        const episodeNumber = Number(episode);
+        const selectedEpisode = episodes.find(item => Number(item.ordinal) === episodeNumber)
+          || episodes.find(item => Number(item.sort_order) === episodeNumber);
+        const hlsUrl = normalizeExternalUrl(selectedEpisode?.hls_1080)
+          || normalizeExternalUrl(selectedEpisode?.hls_720)
+          || normalizeExternalUrl(selectedEpisode?.hls_480);
 
-      if (hlsUrl) {
-        return {
-          url: hlsUrl,
-          provider: 'anilibria',
-          releaseId,
-        };
+        if (hlsUrl) {
+          return {
+            url: hlsUrl,
+            provider: 'anilibria',
+            releaseId,
+          };
+        }
       }
     }
 
-    const externalUrl = normalizeExternalUrl(match.external_player);
-    return externalUrl ? { url: externalUrl, provider: 'anilibria', releaseId } : null;
+    return null;
   };
 
   app.get('/api/anime-player', async (req, res) => {
@@ -269,8 +309,11 @@ async function startServer() {
 
     try {
       aniLibriaPlayer = await fetchAniLibriaPlayer(title, episode);
+      if (!aniLibriaPlayer) {
+        aniLibriaPlayer = await fetchAnimeVostPlayer(title, episode);
+      }
     } catch (error) {
-      console.warn('AniLibria player lookup failed:', error);
+      console.warn('Player lookup failed:', error);
     }
 
     if (aniLibriaPlayer) {
@@ -569,9 +612,14 @@ async function startServer() {
       });
     });
 
-    socket.on('force_sync', () => {
+    socket.on('force_sync', (currentTimestamp) => {
       if (!currentRoomId || !rooms[currentRoomId]) return;
       if (!canControlPlayback(rooms[currentRoomId], socket.id, currentUser?.uid)) return;
+
+      if (typeof currentTimestamp === 'number') {
+        rooms[currentRoomId].timestamp = currentTimestamp;
+        rooms[currentRoomId].lastUpdateAt = Date.now();
+      }
 
       // Broadcast the last known good state
       io.to(currentRoomId).emit('sync_playback', {

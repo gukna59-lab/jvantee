@@ -24,17 +24,27 @@ export default function App() {
   });
 
   useEffect(() => {
+    // Failsafe timeout for loading state
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
+
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
       if (user) {
         setUid(user.uid);
-        const docRef = doc(db, 'users', user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-           setUsername(docSnap.data().username);
-           setAvatar(docSnap.data().avatar || null);
-        } else {
-           setUsername(user.email?.replace('@jvante.local', '').split('@')[0] || 'User');
+        try {
+          const docRef = doc(db, 'users', user.uid);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+             setUsername(docSnap.data().username);
+             setAvatar(docSnap.data().avatar || null);
+          } else {
+             setUsername(user.email?.replace('@jvante.local', '').split('@')[0] || 'User');
+          }
+        } catch (err) {
+          console.error("Error fetching user data:", err);
+          setUsername(user.email?.replace('@jvante.local', '').split('@')[0] || 'User');
         }
       } else {
         setUid(null);
@@ -42,8 +52,12 @@ export default function App() {
         setAvatar(null);
       }
       setLoading(false);
+      clearTimeout(timer);
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   useEffect(() => {

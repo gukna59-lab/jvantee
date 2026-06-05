@@ -15,7 +15,7 @@ interface PlayerProps {
   onUpdateVideoUrl: (url: string) => void;
   onPlayStateChange: (isPlaying: boolean, timestamp: number) => void;
   onSeek: (timestamp: number) => void;
-  onForceSync: () => void;
+  onForceSync: (timestamp: number) => void;
   onReportProgress: (timestamp: number) => void;
   onTransferAdmin: (userId: string) => void;
   onKickUser: (userId: string) => void;
@@ -103,7 +103,7 @@ export function Player({
       const diff = Math.abs(currentClientTime - expectedTime);
       
       // Keep viewers tightly synced. The creator is allowed to scrub freely.
-      if (!isCreator && diff > 1.25) {
+      if (!isCreator && diff > 2.0) {
         seekPlayerTo(expectedTime);
       }
     }
@@ -364,7 +364,7 @@ export function Player({
                                {roomState.isPlaying ? 'Стоп' : 'Плей'}
                             </button>
                             <button 
-                               onClick={onForceSync}
+                               onClick={() => onForceSync(getCurrentTime())}
                                className="flex items-center gap-2 px-4 py-2 bg-[#EF4444]/10 hover:bg-[#EF4444]/20 border border-[#EF4444]/30 text-[#F87171] text-[11px] font-bold rounded uppercase tracking-tighter"
                             >
                                <span className="w-2 h-2 rounded-full bg-[#EF4444] animate-pulse"></span>
