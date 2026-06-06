@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Search, Grid, List, PlaySquare, TrendingUp, Star, Eye, ChevronRight, LayoutGrid, MonitorPlay, Film, Tv, Clock, Languages, ExternalLink } from 'lucide-react';
 import logoSrc from '../assets/images/jvante_logo.svg';
 import { animeData, Anime } from '../data/animeData';
-import { HlsPlayer } from './HlsPlayer';
+import { CustomPlayer } from './CustomPlayer';
 
 interface AnimeHomeProps {
   onBack: () => void;
@@ -426,22 +426,6 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                              <span className="px-3 py-1.5 text-sm text-zinc-500">Проверяю серии...</span>
                            )}
                          </div>
-                         {selectedAnime.title === 'Ванпанчмен' && availableQualities.length > 1 && (
-                           <div className="flex items-center gap-2">
-                             {availableQualities.map(quality => (
-                               <button
-                                 key={quality}
-                                 onClick={() => {
-                                   setSelectedQuality(quality);
-                                   if (isPlaying) fetchKodikPlayer(selectedAnime, quality);
-                                 }}
-                                 className={`px-3 py-1.5 text-xs font-black rounded-lg border transition-colors ${selectedQuality === quality ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'border-[#1F2937] text-zinc-500 hover:text-white hover:bg-[#1E293B]'}`}
-                               >
-                                 {quality}p
-                               </button>
-                             ))}
-                           </div>
-                         )}
                       </div>
 
                        {/* Kodik Video Player */}
@@ -479,15 +463,17 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                              </div>
                            </>
                          ) : kodikUrl ? (
-                           /\.m3u8(\?|$)/i.test(kodikUrl) ? (
-                             <HlsPlayer src={kodikUrl} />
-                           ) : /\.mp4(\?|$)/i.test(kodikUrl) ? (
-                             <video
+                           /\.(m3u8|mp4)(\?|$)/i.test(kodikUrl) ? (
+                             <CustomPlayer
                                src={kodikUrl}
-                               controls
-                               autoPlay
-                               playsInline
-                               className="w-full h-full bg-black outline-none"
+                               title={selectedAnime.title}
+                               poster={selectedAnime.screenshots[0] || selectedAnime.img}
+                               qualities={availableQualities}
+                               selectedQuality={selectedQuality}
+                               onQualityChange={(quality) => {
+                                 setSelectedQuality(quality);
+                                 fetchKodikPlayer(selectedAnime, quality);
+                               }}
                              />
                            ) : (
                              <iframe
@@ -504,7 +490,7 @@ export function AnimeHome({ onBack, user, username, avatar }: AnimeHomeProps) {
                              Загрузка плеера...
                            </div>
                          )}
-                         {isPlaying && kodikUrl && showPlayerFallback && (
+                         {isPlaying && kodikUrl && showPlayerFallback && !/\.(m3u8|mp4)(\?|$)/i.test(kodikUrl) && (
                            <div className="absolute inset-x-4 bottom-4 z-20 rounded-2xl border border-blue-500/30 bg-[#0A0C10]/90 p-4 backdrop-blur-xl shadow-2xl">
                              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                <div>

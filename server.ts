@@ -315,7 +315,7 @@ async function startServer() {
       voice: 'AniLibria',
       provider: 'anilibria',
       episodes: availableEpisodes,
-      qualities: simplifyTitle(title) === 'ванпанчмен' ? ['1080', '720', '480'] : undefined,
+      qualities: ['1080', '720', '480'],
     };
   };
 
@@ -383,7 +383,7 @@ async function startServer() {
       voice: 'AnimeVost',
       provider: 'animevost',
       episodes: Array.from(new Set(episodes)),
-      qualities: simplifyTitle(title) === 'ванпанчмен' ? ['720', '480'] : undefined,
+      qualities: ['720', '480'],
     };
   };
 
@@ -476,17 +476,6 @@ async function startServer() {
     const sources = sourceResults
       .map(result => result.status === 'fulfilled' ? result.value : null)
       .filter((source): source is AnimeSource => !!source);
-
-    if (!sources.length && fallbackEpisodes > 0) {
-      res.json({
-        sources: [{
-          voice: 'Поиск плеера',
-          provider: 'anilibria',
-          episodes: range(1, fallbackEpisodes),
-        }],
-      });
-      return;
-    }
 
     res.json({ sources });
   });

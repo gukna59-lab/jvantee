@@ -16,7 +16,9 @@
 const longPlot = (base: string, extra: string) =>
   `${base} ${extra} История раскрывается через выборы героев, цену силы и попытки сохранить себя в мире, где доверие дается тяжело.`;
 
-export const animeData: Anime[] = [
+const allowedVoiceovers = ['AniLibria', 'AnimeVost'];
+
+const allAnimeData: Anime[] = [
   {
     id: 1, title: 'Атака титанов', rating: 9.1, rank: 1, type: 'Сериалы',
     shikimori_id: '16498',
@@ -194,4 +196,15 @@ export const animeData: Anime[] = [
     episodes: 13, voiceovers: ['AniLibria', 'Netflix', 'Субтитры'], videoSrc: ''
   }
 ];
+
+export const animeData: Anime[] = allAnimeData
+  .map(anime => ({
+    ...anime,
+    voiceovers: anime.voiceovers.filter(voice => allowedVoiceovers.includes(voice)),
+  }))
+  .filter(anime => anime.voiceovers.length > 0)
+  .map((anime, index) => ({
+    ...anime,
+    rank: index + 1,
+  }));
 

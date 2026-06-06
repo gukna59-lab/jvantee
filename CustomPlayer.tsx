@@ -31,7 +31,7 @@ export const CustomPlayer: React.FC<CustomPlayerProps> = ({
   const [selectedQuality, setSelectedQuality] = useState(qualities[0] || '720');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showQualityMenu, setShowQualityMenu] = useState(false);
-  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const video = videoRef.current;

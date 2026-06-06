@@ -53,3 +53,50 @@ input:focus, textarea:focus, button:focus {
   outline: none;
 }
 
+.custom-player-range {
+  height: 18px;
+  cursor: pointer;
+  appearance: none;
+  background: transparent;
+  accent-color: #F43F5E;
+}
+
+.custom-player-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.custom-player-range::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -4px;
+  appearance: none;
+  border-radius: 999px;
+  background: #F43F5E;
+  box-shadow: 0 0 0 4px rgba(244, 63, 94, 0.18);
+}
+
+.custom-player-range::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.custom-player-range::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 0;
+  border-radius: 999px;
+  background: #F43F5E;
+}
+
+.custom-player-range-volume::-webkit-slider-thumb {
+  background: #FFFFFF;
+  box-shadow: none;
+}
+
+.custom-player-range-volume::-moz-range-thumb {
+  background: #FFFFFF;
+}
+
